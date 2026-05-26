@@ -1,0 +1,11 @@
+{
+  "id": "carton",
+  "displayName": {
+    "zh": "纸箱 (Carton)",
+    "en": "Carton"
+  },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top"
+}

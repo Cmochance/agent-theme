@@ -1,0 +1,11 @@
+{
+  "id": "nailin",
+  "displayName": {
+    "zh": "奈琳 (Nailin)",
+    "en": "Nailin"
+  },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top"
+}

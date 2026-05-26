@@ -1,0 +1,11 @@
+{
+  "id": "azurlane",
+  "displayName": {
+    "zh": "碧蓝航线 (Azur Lane)",
+    "en": "Azur Lane"
+  },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top"
+}

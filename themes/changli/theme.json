@@ -1,0 +1,11 @@
+{
+  "id": "changli",
+  "displayName": {
+    "zh": "长离 (Changli)",
+    "en": "Changli"
+  },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top"
+}

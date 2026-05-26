@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codex Theme Companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="error-log" style="position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.8); color:white; z-index:9999; padding:10px; font-size:12px; max-height:200px; overflow-y:auto;"></div>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      document.getElementById('error-log').innerHTML += `<p>${msg} at ${line}:${col}</p>`;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      document.getElementById('error-log').innerHTML += `<p>Promise: ${e.reason}</p>`;
+    });
+  </script>
+  <div class="glow-bg"></div>
+  
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">🎨</span>
+        <div>
+          <h1>Codex Theme Companion</h1>
+          <p class="subtitle">让你的 Codex App 焕发个性色彩</p>
+        </div>
+      </div>
+      
+      <div class="status-bar card">
+        <div class="status-item">
+          <span class="status-label">Codex 状态</span>
+          <div class="status-value">
+            <span id="codex-status-dot" class="dot"></span>
+            <span id="codex-status-text">检测中...</span>
+          </div>
+        </div>
+        
+        <div class="status-item">
+          <span class="status-label">CDP 调试端口</span>
+          <span id="cdp-port-text" class="status-value highlight">-</span>
+        </div>
+        
+        <div class="status-item toggle-item">
+          <span class="status-label">自动启动 Codex</span>
+          <label class="switch">
+            <input type="checkbox" id="auto-launch-toggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        
+        <div class="actions-group">
+          <button id="btn-start-codex" class="btn btn-primary">启动 Codex</button>
+          <button id="btn-restart-codex" class="btn btn-secondary">重启 Codex</button>
+        </div>
+      </div>
+    </header>
+    
+    <main class="app-main">
+      <div class="section-title">
+        <h2>选择背景主题</h2>
+        <div class="master-switch-area">
+          <span class="switch-label">启用主题注入</span>
+          <label class="switch">
+            <input type="checkbox" id="theme-enabled-toggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+      
+      <div id="themes-grid" class="themes-grid">
+        <!-- Built-in and custom theme cards will be generated here -->
+        
+        <!-- Loading Placeholder -->
+        <div class="loading-placeholder">正在加载主题列表...</div>
+      </div>
+    </main>
+    
+    <footer class="app-footer">
+      <div class="footer-status">
+        <span class="footer-status-label">系统通知：</span>
+        <span id="notification-text" class="notification-info">服务已就绪。</span>
+      </div>
+      <p class="copyright">Codex Theme Companion © 2026. Made with ❤️ for anime lovers.</p>
+    </footer>
+  </div>
+
+  <!-- Upload & Crop Modal -->
+  <div id="upload-modal" class="modal">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3>添加自定义背景</h3>
+        <button id="btn-close-modal" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="drop-zone" class="drop-zone">
+          <span class="drop-icon">📤</span>
+          <p>拖拽图片到这里，或 <span class="browse-link">浏览文件</span></p>
+          <span class="file-info">支持 JPG, PNG，最大 20MB</span>
+          <input type="file" id="file-input" accept="image/png, image/jpeg" style="display: none;">
+        </div>
+        
+        <div id="crop-area" class="crop-area" style="display: none;">
+          <div class="crop-container">
+            <img id="crop-image" src="" alt="To Crop">
+            <div id="crop-box" class="crop-box"></div>
+          </div>
+          <div class="crop-controls">
+            <div class="control-row">
+              <label for="zoom-slider">缩放:</label>
+              <input type="range" id="zoom-slider" min="10" max="200" value="100">
+            </div>
+            <p class="crop-tip">💡 提示：可以在图片上拖动以调整裁剪位置。</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-crop" class="btn btn-secondary" style="display: none;">重新选择</button>
+        <button id="btn-save-crop" class="btn btn-primary" style="display: none;">保存并应用</button>
+      </div>
+    </div>
+  </div>
+  <script src="bundle.js"></script>
+</body>
+</html>

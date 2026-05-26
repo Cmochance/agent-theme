@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Rust build artifacts
+src-tauri/target/
+
+# macOS
+.DS_Store
+
+# Tauri generated files
+src-tauri/gen/
+
+# Debug artifacts
+/tmp/

@@ -1,0 +1,11 @@
+{
+  "id": "zani",
+  "displayName": {
+    "zh": "扎妮 (Zani)",
+    "en": "Zani"
+  },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top"
+}
