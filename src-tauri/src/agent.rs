@@ -1,10 +1,10 @@
+use crate::config::AgentKind;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use sysinfo::System;
 use std::time::Duration;
+use sysinfo::System;
 use tokio::time::sleep;
-use crate::config::AgentKind;
 
 pub fn get_agent_data_dir(kind: &AgentKind) -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("~"));
@@ -20,7 +20,12 @@ pub fn get_devtools_port_file(kind: &AgentKind) -> PathBuf {
 pub fn clean_locks(kind: &AgentKind) {
     log::info!("Cleaning {:?} locks...", kind);
     let dir = get_agent_data_dir(kind);
-    let files = ["SingletonLock", "SingletonCookie", "SingletonSocket", "DevToolsActivePort"];
+    let files = [
+        "SingletonLock",
+        "SingletonCookie",
+        "SingletonSocket",
+        "DevToolsActivePort",
+    ];
     for f in files {
         let _ = fs::remove_file(dir.join(f));
     }
@@ -31,10 +36,11 @@ pub fn is_agent_process_running(kind: &AgentKind) -> bool {
     sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
     let name_patterns = kind.process_name_patterns();
     let bin_patterns = kind.binary_path_patterns();
-    for (_pid, process) in sys.processes() {
+    for process in sys.processes().values() {
         let pname = process.name().to_string_lossy();
         let name_match = name_patterns.iter().any(|p| pname.contains(p));
-        let exe_match = process.exe()
+        let exe_match = process
+            .exe()
             .map(|e| {
                 let estr = e.to_string_lossy();
                 bin_patterns.iter().any(|p| estr.contains(p))
@@ -50,9 +56,13 @@ pub fn is_agent_process_running(kind: &AgentKind) -> bool {
 pub fn force_kill_agent(kind: &AgentKind) {
     log::info!("Force killing {:?} processes...", kind);
     for pattern in kind.pkill_patterns() {
-        let _ = Command::new("pkill").arg("-9").arg("-f").arg(pattern).status();
+        let _ = Command::new("pkill")
+            .arg("-9")
+            .arg("-f")
+            .arg(pattern)
+            .status();
     }
-    
+
     // Wait brief moment
     for _ in 0..10 {
         if !is_agent_process_running(kind) {
@@ -88,23 +98,34 @@ pub async fn launch_agent(kind: &AgentKind, force_clean: bool) -> Result<u16, St
             // Test if responsive via the browser WebSocket endpoint
             let version_url = format!("http://127.0.0.1:{}/json/version", active_port);
             if reqwest::get(&version_url).await.is_ok() {
-                log::info!("{:?} is already running and listening on port {}", kind, active_port);
+                log::info!(
+                    "{:?} is already running and listening on port {}",
+                    kind,
+                    active_port
+                );
                 return Ok(active_port);
             }
             // Also try /json/list (works for both Codex and Antigravity)
             let list_url = format!("http://127.0.0.1:{}/json/list", active_port);
             if reqwest::get(&list_url).await.is_ok() {
-                log::info!("{:?} is already running and listening on port {}", kind, active_port);
+                log::info!(
+                    "{:?} is already running and listening on port {}",
+                    kind,
+                    active_port
+                );
                 return Ok(active_port);
             }
         }
-        log::info!("{:?} process found but debug port is unresponsive. Restarting...", kind);
+        log::info!(
+            "{:?} process found but debug port is unresponsive. Restarting...",
+            kind
+        );
         force_kill_agent(kind);
         clean_locks(kind);
     } else {
         clean_locks(kind);
     }
-    
+
     let binary = kind.binary_path();
     log::info!("Starting {:?} at {:?}...", kind, binary);
     let mut child = Command::new(&binary)
@@ -112,7 +133,7 @@ pub async fn launch_agent(kind: &AgentKind, force_clean: bool) -> Result<u16, St
         .arg("--remote-allow-origins=*")
         .spawn()
         .map_err(|e| format!("Failed to start {:?}: {}", kind, e))?;
-    
+
     // Polling for DevTools port
     for _ in 1..=30 {
         if let Some(port) = read_port_from_file(kind) {
@@ -124,9 +145,12 @@ pub async fn launch_agent(kind: &AgentKind, force_clean: bool) -> Result<u16, St
         }
         sleep(Duration::from_millis(500)).await;
     }
-    
+
     let _ = child.kill();
-    Err(format!("Timeout waiting for {:?} DevToolsActivePort to become available", kind))
+    Err(format!(
+        "Timeout waiting for {:?} DevToolsActivePort to become available",
+        kind
+    ))
 }
 
 /// Convenience: read the selected agent kind from the current config.

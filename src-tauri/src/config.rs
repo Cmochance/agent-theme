@@ -1,22 +1,18 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use lazy_static::lazy_static;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum AgentKind {
+    #[default]
     Codex,
     Antigravity,
 }
 
-impl Default for AgentKind {
-    fn default() -> Self {
-        AgentKind::Codex
-    }
-}
 
 impl fmt::Display for AgentKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -87,9 +83,7 @@ impl AgentKind {
                 "SkyComputerUseClient",
                 "Codex Computer Use\\.app",
             ],
-            AgentKind::Antigravity => vec![
-                "/Applications/Antigravity\\.app/",
-            ],
+            AgentKind::Antigravity => vec!["/Applications/Antigravity\\.app/"],
         }
     }
 }

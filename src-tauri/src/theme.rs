@@ -1,8 +1,8 @@
+use crate::config::{get_config_dir, AgentKind};
+use base64::{engine::general_purpose::STANDARD as base64_engine, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use base64::{Engine as _, engine::general_purpose::STANDARD as base64_engine};
-use crate::config::{get_config_dir, AgentKind};
 use tauri::AppHandle;
 use tauri::Manager;
 
@@ -29,13 +29,17 @@ pub fn get_internal_themes_dir(app: &AppHandle) -> PathBuf {
     // 1. Tauri resource_dir (bundled apps + some dev setups)
     if let Ok(res_dir) = app.path().resource_dir() {
         let themes = res_dir.join("themes");
-        if themes.exists() { return themes; }
+        if themes.exists() {
+            return themes;
+        }
     }
     // 2. macOS bundle: exe at Contents/MacOS/<bin>, themes at Contents/Resources/themes
     if let Ok(exe) = std::env::current_exe() {
         if let Some(contents) = exe.parent().and_then(|p| p.parent()) {
             let themes = contents.join("Resources").join("themes");
-            if themes.exists() { return themes; }
+            if themes.exists() {
+                return themes;
+            }
         }
     }
     // 3. Dev fallback: CWD is src-tauri, themes is ../themes
@@ -49,7 +53,7 @@ pub fn get_custom_theme_dir() -> PathBuf {
 pub fn get_themes(app: &AppHandle) -> Vec<Theme> {
     let mut themes = vec![];
     let internal_dir = get_internal_themes_dir(app);
-    
+
     if internal_dir.exists() {
         if let Ok(entries) = fs::read_dir(&internal_dir) {
             for entry in entries.flatten() {
@@ -104,10 +108,16 @@ pub fn save_custom_theme(bg_base64: &str, preview_base64: &str) -> Result<(), St
     let preview_data = parse_base64_data_uri(preview_base64)?;
 
     if bg_data.len() > MAX_THEME_IMAGE_BYTES {
-        return Err(format!("Background image too large ({}MB max)", MAX_THEME_IMAGE_BYTES / 1024 / 1024));
+        return Err(format!(
+            "Background image too large ({}MB max)",
+            MAX_THEME_IMAGE_BYTES / 1024 / 1024
+        ));
     }
     if preview_data.len() > MAX_THEME_IMAGE_BYTES {
-        return Err(format!("Preview image too large ({}MB max)", MAX_THEME_IMAGE_BYTES / 1024 / 1024));
+        return Err(format!(
+            "Preview image too large ({}MB max)",
+            MAX_THEME_IMAGE_BYTES / 1024 / 1024
+        ));
     }
 
     fs::write(custom_dir.join("bg.jpg"), bg_data).map_err(|e| e.to_string())?;
@@ -140,11 +150,21 @@ pub fn generate_injection_script(theme: &Theme, kind: &AgentKind) -> Result<Stri
 
 fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
     let bg_path = theme.dir.join(&theme.background);
-    let bg_bytes = fs::read(&bg_path).map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
-    let bg_ext = if theme.background.ends_with(".png") { "png" } else { "jpeg" };
-    let bg_data_uri = format!("data:image/{};base64,{}", bg_ext, base64_engine.encode(&bg_bytes));
+    let bg_bytes = fs::read(&bg_path)
+        .map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
+    let bg_ext = if theme.background.ends_with(".png") {
+        "png"
+    } else {
+        "jpeg"
+    };
+    let bg_data_uri = format!(
+        "data:image/{};base64,{}",
+        bg_ext,
+        base64_engine.encode(&bg_bytes)
+    );
 
-    let script = format!(r#"
+    let script = format!(
+        r#"
         (function() {{
             // Clear existing theme first
             const existingStyle = document.getElementById('agent-theme-style');
@@ -218,16 +238,27 @@ fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
 
             console.log('Agent theme applied successfully.');
         }})();
-    "#, bg_data_uri);
+    "#,
+        bg_data_uri
+    );
 
     Ok(script)
 }
 
 fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String> {
     let bg_path = theme.dir.join(&theme.background);
-    let bg_bytes = fs::read(&bg_path).map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
-    let bg_ext = if theme.background.ends_with(".png") { "png" } else { "jpeg" };
-    let bg_data_uri = format!("data:image/{};base64,{}", bg_ext, base64_engine.encode(&bg_bytes));
+    let bg_bytes = fs::read(&bg_path)
+        .map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
+    let bg_ext = if theme.background.ends_with(".png") {
+        "png"
+    } else {
+        "jpeg"
+    };
+    let bg_data_uri = format!(
+        "data:image/{};base64,{}",
+        bg_ext,
+        base64_engine.encode(&bg_bytes)
+    );
 
     // Antigravity DOM structure (observed via CDP):
     //   body.theme-standalone.theme-light
@@ -235,7 +266,8 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
     //   Sidebar: div[role="navigation"][aria-label="Sidebar"] with .bg-sidebar
     //   Main content: .bg-background, .text-foreground
     //   CSS vars: --foreground, --background, --sidebar
-    let script = format!(r#"
+    let script = format!(
+        r#"
         (function() {{
             const existingStyle = document.getElementById('agent-theme-style');
             if (existingStyle) existingStyle.remove();
@@ -311,7 +343,9 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
 
             console.log('Antigravity theme applied successfully.');
         }})();
-    "#, bg_data_uri);
+    "#,
+        bg_data_uri
+    );
 
     Ok(script)
 }
