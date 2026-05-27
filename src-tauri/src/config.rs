@@ -13,7 +13,6 @@ pub enum AgentKind {
     Antigravity,
 }
 
-
 impl fmt::Display for AgentKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
