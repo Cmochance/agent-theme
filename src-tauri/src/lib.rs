@@ -24,7 +24,10 @@ async fn set_enabled(enabled: bool) -> Result<AppConfig, String> {
 }
 
 #[tauri::command]
-async fn set_selected_agent(agent: AgentKind) -> Result<AppConfig, String> {
+async fn set_selected_agent(state: State<'_, AppState>, agent: AgentKind) -> Result<AppConfig, String> {
+    // Clear stale port/identifier from previous agent
+    *state.cdp_port.lock().unwrap() = None;
+    *state.active_identifier.lock().unwrap() = None;
     Ok(update_config(|c| c.selected_agent = agent))
 }
 

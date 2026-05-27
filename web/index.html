@@ -23,7 +23,7 @@
       var el = document.getElementById('error-log');
       el.style.display = 'block';
       var p = document.createElement('p');
-      p.textContent = 'Promise: ' + e.reason;
+      p.textContent = 'Unhandled: ' + e.reason;
       el.appendChild(p);
     });
   </script>
@@ -39,75 +39,6 @@
         </div>
       </div>
       
-    </header>
-    
-    <main class="app-main">
-      <div class="section-title">
-        <h2>选择背景主题</h2>
-        <div class="master-switch-area">
-          <span class="switch-label">启用主题注入</span>
-          <label class="switch">
-            <input type="checkbox" id="theme-enabled-toggle">
-            <span class="slider round"></span>
-          </label>
-        </div>
-      </div>
-      
-      <div id="themes-grid" class="themes-grid">
-        <!-- Built-in and custom theme cards will be generated here -->
-        
-        <!-- Loading Placeholder -->
-        <div class="loading-placeholder">正在加载主题列表...</div>
-      </div>
-    </main>
-    
-    <footer class="app-footer">
-      <div class="footer-status">
-        <span class="footer-status-label">系统通知：</span>
-        <span id="notification-text" class="notification-info">服务已就绪。</span>
-      </div>
-      <p class="copyright">Agent Theme Companion © 2026. Made with ❤️ for anime lovers.</p>
-    </footer>
-  </div>
-
-  <!-- Upload & Crop Modal -->
-  <div id="upload-modal" class="modal">
-    <div class="modal-content card">
-      <div class="modal-header">
-        <h3>添加自定义背景</h3>
-        <button id="btn-close-modal" class="close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="drop-zone" class="drop-zone">
-          <span class="drop-icon">📤</span>
-          <p>拖拽图片到这里，或 <span class="browse-link">浏览文件</span></p>
-          <span class="file-info">支持 JPG, PNG，最大 20MB</span>
-          <input type="file" id="file-input" accept="image/png, image/jpeg" style="display: none;">
-        </div>
-        
-        <div id="crop-area" class="crop-area" style="display: none;">
-          <div class="crop-container">
-            <img id="crop-image" src="" alt="To Crop">
-            <div id="crop-box" class="crop-box"></div>
-          </div>
-          <div class="crop-controls">
-            <div class="control-row">
-              <label for="zoom-slider">缩放:</label>
-              <input type="range" id="zoom-slider" min="10" max="200" value="100">
-            </div>
-            <p class="crop-tip">💡 提示：可以在图片上拖动以调整裁剪位置。</p>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="btn-cancel-crop" class="btn btn-secondary" style="display: none;">重新选择</button>
-        <button id="btn-save-crop" class="btn btn-primary" style="display: none;">保存并应用</button>
-      </div>
-    </div>
-  </div>
-  <script src="bundle.js"></script>
-</body>
-</html>
       <div class="status-bar card">
         <div class="status-item">
           <span class="status-label">Agent 应用</span>
@@ -143,3 +74,72 @@
           <button id="btn-restart-agent" class="btn btn-secondary">重启 Agent</button>
         </div>
       </div>
+    </header>
+    
+    <main class="app-main">
+      <div class="section-title">
+        <h2>选择背景主题</h2>
+        <div class="master-switch-area">
+          <span class="switch-label">启用主题注入</span>
+          <label class="switch">
+            <input type="checkbox" id="theme-enabled-toggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+      
+      <div id="themes-grid" class="themes-grid">
+        <!-- Built-in and custom theme cards will be generated here -->
+        
+        <!-- Loading Placeholder -->
+        <div class="loading-placeholder">正在加载主题列表...</div>
+      </div>
+    </main>
+    
+    <footer class="app-footer">
+      <div class="footer-status">
+        <span class="footer-status-label">通知：</span>
+        <span id="notification-text" class="notification-info">就绪</span>
+      </div>
+      <p class="copyright">Agent Theme Companion · Made with ❤️</p>
+    </footer>
+  </div>
+
+  <!-- Upload / Custom Theme Modal -->
+  <div id="upload-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>上传自定义背景</h3>
+        <button id="btn-close-modal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="drop-zone-one" class="drop-zone">
+          <span class="drop-icon">📤</span>
+          <p>拖拽图片到这里，或 <span class="browse-link">浏览文件</span></p>
+          <span class="file-info">支持 JPG, PNG，最大 20MB</span>
+          <input type="file" id="file-input" accept="image/png, image/jpeg" style="display: none;">
+        </div>
+        
+        <div id="crop-area" class="crop-area" style="display: none;">
+          <div class="crop-container">
+            <img id="crop-image" src="" alt="To Crop">
+            <div id="crop-box" class="crop-box"></div>
+          </div>
+          <div class="crop-controls">
+            <div class="control-row">
+              <label for="zoom-slider">缩放:</label>
+              <input type="range" id="zoom-slider" min="10" max="200" value="100">
+            </div>
+            <p class="crop-tip">💡 提示：可以在图片上拖动以调整裁剪位置。</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-crop" class="btn btn-secondary" style="display: none;">重新选择</button>
+        <button id="btn-save-crop" class="btn btn-primary" style="display: none;">保存并应用</button>
+      </div>
+    </div>
+  </div>
+  <script src="bundle.js"></script>
+</body>
+</html>
