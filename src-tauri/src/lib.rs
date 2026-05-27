@@ -28,7 +28,7 @@ async fn set_selected_agent(state: State<'_, AppState>, agent: AgentKind) -> Res
     // Clear stale port/identifier from previous agent
     *state.cdp_port.lock().unwrap() = None;
     *state.active_identifier.lock().unwrap() = None;
-    Ok(update_config(|c| c.selected_agent = agent))
+    Ok(update_config(|c| { c.selected_agent = agent; c.active_identifier = None; }))
 }
 
 #[tauri::command]
