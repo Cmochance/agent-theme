@@ -3,20 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codex Theme Companion</title>
+  <title>Agent Theme Companion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="error-log" style="position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.8); color:white; z-index:9999; padding:10px; font-size:12px; max-height:200px; overflow-y:auto;"></div>
+  <div id="error-log" style="display:none; position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.8); color:white; z-index:9999; padding:10px; font-size:12px; max-height:200px; overflow-y:auto;"></div>
   <script>
     window.onerror = function(msg, url, line, col, error) {
-      document.getElementById('error-log').innerHTML += `<p>${msg} at ${line}:${col}</p>`;
+      var el = document.getElementById('error-log');
+      el.style.display = 'block';
+      var p = document.createElement('p');
+      p.textContent = msg + ' at ' + line + ':' + col;
+      el.appendChild(p);
     };
     window.addEventListener('unhandledrejection', function(e) {
-      document.getElementById('error-log').innerHTML += `<p>Promise: ${e.reason}</p>`;
+      var el = document.getElementById('error-log');
+      el.style.display = 'block';
+      var p = document.createElement('p');
+      p.textContent = 'Promise: ' + e.reason;
+      el.appendChild(p);
     });
   </script>
   <div class="glow-bg"></div>
@@ -26,38 +34,11 @@
       <div class="logo-area">
         <span class="logo-icon">🎨</span>
         <div>
-          <h1>Codex Theme Companion</h1>
-          <p class="subtitle">让你的 Codex App 焕发个性色彩</p>
+          <h1>Agent Theme Companion</h1>
+          <p class="subtitle">让你的 Agent App 焕发个性色彩</p>
         </div>
       </div>
       
-      <div class="status-bar card">
-        <div class="status-item">
-          <span class="status-label">Codex 状态</span>
-          <div class="status-value">
-            <span id="codex-status-dot" class="dot"></span>
-            <span id="codex-status-text">检测中...</span>
-          </div>
-        </div>
-        
-        <div class="status-item">
-          <span class="status-label">CDP 调试端口</span>
-          <span id="cdp-port-text" class="status-value highlight">-</span>
-        </div>
-        
-        <div class="status-item toggle-item">
-          <span class="status-label">自动启动 Codex</span>
-          <label class="switch">
-            <input type="checkbox" id="auto-launch-toggle">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        
-        <div class="actions-group">
-          <button id="btn-start-codex" class="btn btn-primary">启动 Codex</button>
-          <button id="btn-restart-codex" class="btn btn-secondary">重启 Codex</button>
-        </div>
-      </div>
     </header>
     
     <main class="app-main">
@@ -85,7 +66,7 @@
         <span class="footer-status-label">系统通知：</span>
         <span id="notification-text" class="notification-info">服务已就绪。</span>
       </div>
-      <p class="copyright">Codex Theme Companion © 2026. Made with ❤️ for anime lovers.</p>
+      <p class="copyright">Agent Theme Companion © 2026. Made with ❤️ for anime lovers.</p>
     </footer>
   </div>
 
@@ -127,3 +108,38 @@
   <script src="bundle.js"></script>
 </body>
 </html>
+      <div class="status-bar card">
+        <div class="status-item">
+          <span class="status-label">Agent 应用</span>
+          <div class="agent-selector">
+            <button id="btn-agent-codex" class="agent-btn active" data-agent="codex">Codex</button>
+            <button id="btn-agent-antigravity" class="agent-btn" data-agent="antigravity">Antigravity</button>
+          </div>
+        </div>
+        
+        <div class="status-item">
+          <span class="status-label">Agent 状态</span>
+          <div class="status-value">
+            <span id="agent-status-dot" class="dot"></span>
+            <span id="agent-status-text">检测中...</span>
+          </div>
+        </div>
+        
+        <div class="status-item">
+          <span class="status-label">CDP 调试端口</span>
+          <span id="cdp-port-text" class="status-value highlight">-</span>
+        </div>
+        
+        <div class="status-item toggle-item">
+          <span class="status-label">自动启动 Agent</span>
+          <label class="switch">
+            <input type="checkbox" id="auto-launch-toggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        
+        <div class="actions-group">
+          <button id="btn-start-agent" class="btn btn-primary">启动 Agent</button>
+          <button id="btn-restart-agent" class="btn btn-secondary">重启 Agent</button>
+        </div>
+      </div>

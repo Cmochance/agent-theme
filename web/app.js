@@ -24,6 +24,8 @@ const btnStartAgent = document.getElementById('btn-start-agent');
 const btnRestartAgent = document.getElementById('btn-restart-agent');
 const themesGrid = document.getElementById('themes-grid');
 const notificationText = document.getElementById('notification-text');
+const btnAgentCodex = document.getElementById('btn-agent-codex');
+const btnAgentAntigravity = document.getElementById('btn-agent-antigravity');
 
 // Modal Elements
 const uploadModal = document.getElementById('upload-modal');
@@ -44,37 +46,6 @@ function notify(text, type = 'info') {
 }
 
 // Fetch Status
-async function refreshStatus() {
-  try {
-    const status = await invoke('get_agent_status');
-    const config = await invoke('get_config');
-    appConfig = config;
-    
-    // Update Agent Process status
-    if (status.running) {
-      statusDot.className = 'dot online';
-      statusText.textContent = '正在运行';
-      btnStartAgent.disabled = true;
-    } else {
-      statusDot.className = 'dot offline';
-      statusText.textContent = '未运行';
-      btnStartAgent.disabled = false;
-    }
-    
-    // Update CDP port
-    cdpPortText.textContent = status.cdpPort || '未绑定';
-    
-    // Update Toggles
-    autoLaunchToggle.checked = appConfig.autoLaunchAgent;
-    themeEnabledToggle.checked = appConfig.enabled;
-    
-    return status;
-  } catch (err) {
-    notify('无法获取后端状态', 'error');
-    console.error(err);
-  }
-}
-
 // Fetch Themes list
 async function loadThemes() {
   try {
@@ -534,9 +505,42 @@ btnSaveCrop.addEventListener('click', async () => {
   }
 });
 
+// Agent Selector
+function setupAgentSelector() {
+  const btns = document.querySelectorAll('.agent-btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const agent = btn.dataset.agent;
+      if (appConfig && appConfig.selectedAgent === agent) return;
+      
+      notify(`切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}...`, 'info');
+      try {
+        await invoke('set_selected_agent', { agent });
+        await refreshStatus();
+        await loadThemes();
+        
+        // Auto-apply theme to the new agent if enabled
+        if (appConfig && appConfig.enabled && appConfig.selectedThemeId) {
+          await applyTheme(appConfig.selectedThemeId);
+        }
+        
+        notify(`已切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}`, 'info');
+      } catch (err) {
+        notify(`切换失败: ${err}`, 'error');
+        console.error(err);
+      }
+    });
+  });
+}
+
 // Event Listeners for DOM Toggles & Actions
-autoLaunchToggle.addEventListener('change', (e) => {
-  updateConfig({ autoLaunchAgent: e.target.checked });
+autoLaunchToggle.addEventListener('change', async (e) => {
+  try {
+    await invoke('set_auto_launch', { enabled: e.target.checked });
+    await refreshStatus();
+  } catch (err) {
+    console.error('Failed to update auto launch:', err);
+  }
 });
 
 themeEnabledToggle.addEventListener('change', async (e) => {
@@ -561,6 +565,7 @@ btnCancelCrop.addEventListener('click', openUploadModal);
 
 // Init on Load
 async function init() {
+  setupAgentSelector();
   await refreshStatus();
   await loadThemes();
   
@@ -569,3 +574,47 @@ async function init() {
 }
 
 window.addEventListener('DOMContentLoaded', init);
+async function refreshStatus() {
+  try {
+    const status = await invoke('get_agent_status');
+    const config = await invoke('get_config');
+    appConfig = config;
+    
+    // Update Agent Process status
+    if (status.running) {
+      statusDot.className = 'dot online';
+      statusText.textContent = '正在运行';
+      btnStartAgent.disabled = true;
+    } else {
+      statusDot.className = 'dot offline';
+      statusText.textContent = '未运行';
+      btnStartAgent.disabled = false;
+    }
+    
+    // Update CDP port
+    cdpPortText.textContent = status.cdpPort || '未绑定';
+    
+    // Update Toggles
+    autoLaunchToggle.checked = appConfig.autoLaunchAgent;
+    themeEnabledToggle.checked = appConfig.enabled;
+    
+    // Update agent selector buttons
+    updateAgentSelector(appConfig.selectedAgent || 'codex');
+    
+    return status;
+  } catch (err) {
+    notify('无法获取后端状态', 'error');
+    console.error(err);
+  }
+}
+
+function updateAgentSelector(agent) {
+  const btns = document.querySelectorAll('.agent-btn');
+  btns.forEach(btn => {
+    if (btn.dataset.agent === agent) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}

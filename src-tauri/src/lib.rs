@@ -5,7 +5,7 @@ pub mod theme;
 
 use tauri::{AppHandle, State, Manager};
 use std::sync::Mutex;
-use crate::config::{AppConfig, update_config, load_config};
+use crate::config::{AppConfig, AgentKind, update_config, load_config};
 use crate::theme::{get_themes, get_theme, save_custom_theme, delete_custom_theme, generate_injection_script, Theme};
 
 struct AppState {
@@ -24,36 +24,53 @@ async fn set_enabled(enabled: bool) -> Result<AppConfig, String> {
 }
 
 #[tauri::command]
+async fn set_selected_agent(agent: AgentKind) -> Result<AppConfig, String> {
+    Ok(update_config(|c| c.selected_agent = agent))
+}
+
+#[tauri::command]
+async fn set_auto_launch(enabled: bool) -> Result<AppConfig, String> {
+    Ok(update_config(|c| c.auto_launch_agent = enabled))
+}
+
+#[tauri::command]
 async fn get_agent_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let is_running = agent::is_agent_process_running();
+    let config = load_config();
+    let kind = &config.selected_agent;
+    let is_running = agent::is_agent_process_running(kind);
     let port = *state.cdp_port.lock().unwrap();
     Ok(serde_json::json!({
         "running": is_running,
-        "cdpPort": port
+        "cdpPort": port,
+        "agent": kind.to_string().to_lowercase()
     }))
 }
 
 #[tauri::command]
 async fn restart_agent(state: State<'_, AppState>) -> Result<(), String> {
-    let port = agent::launch_agent(true).await?;
+    let config = load_config();
+    let kind = config.selected_agent;
+    let port = agent::launch_agent(&kind, true).await?;
     *state.cdp_port.lock().unwrap() = Some(port);
     Ok(())
 }
 
 #[tauri::command]
 async fn apply_theme(app: AppHandle, state: State<'_, AppState>, theme_id: String) -> Result<(), String> {
+    let config = load_config();
+    let kind = config.selected_agent;
     let theme = get_theme(&app, &theme_id).ok_or("Theme not found")?;
     
     // Read port once, release lock before any async work
     let need_launch = {
         let p = state.cdp_port.lock().unwrap();
-        p.is_none() || !agent::is_agent_process_running()
+        p.is_none() || !agent::is_agent_process_running(&kind)
     };
     
     if need_launch {
-        let config = load_config();
-        if config.auto_launch_agent {
-            let new_port = agent::launch_agent(false).await?;
+        let cfg = load_config();
+        if cfg.auto_launch_agent {
+            let new_port = agent::launch_agent(&kind, false).await?;
             *state.cdp_port.lock().unwrap() = Some(new_port);
         }
     }
@@ -61,9 +78,9 @@ async fn apply_theme(app: AppHandle, state: State<'_, AppState>, theme_id: Strin
     let port = *state.cdp_port.lock().unwrap();
 
     if let Some(p) = port {
-        let script = generate_injection_script(&theme)?;
+        let script = generate_injection_script(&theme, &kind)?;
         
-        let identifier = cdp::inject_theme(p, &script).await?;
+        let identifier = cdp::inject_theme(p, &kind, &script).await?;
         
         update_config(|c| {
             c.enabled = true;
@@ -80,12 +97,13 @@ async fn apply_theme(app: AppHandle, state: State<'_, AppState>, theme_id: Strin
 #[tauri::command]
 async fn clear_theme(state: State<'_, AppState>) -> Result<(), String> {
     let config = load_config();
+    let kind = config.selected_agent;
     let port = *state.cdp_port.lock().unwrap();
     
     if let Some(p) = port {
-        if agent::is_agent_process_running() {
+        if agent::is_agent_process_running(&kind) {
             let ident = state.active_identifier.lock().unwrap().clone().or(config.active_identifier);
-            cdp::clear_theme(p, ident.as_deref()).await?;
+            cdp::clear_theme(p, &kind, ident.as_deref()).await?;
             
             update_config(|c| {
                 c.enabled = false;
@@ -129,6 +147,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_config,
             set_enabled,
+            set_selected_agent,
+            set_auto_launch,
             get_agent_status,
             restart_agent,
             apply_theme,
@@ -140,20 +160,21 @@ pub fn run() {
         .setup(|app| {
             // Check auto launch
             let config = load_config();
+            let kind = config.selected_agent;
             let app_handle = app.handle().clone();
             
             tauri::async_runtime::spawn(async move {
                 if config.auto_launch_agent {
-                    log::info!("Auto-launch enabled, checking Agent...");
-                    if let Ok(port) = agent::launch_agent(false).await {
+                    log::info!("Auto-launch enabled, checking {:?}...", kind);
+                    if let Ok(port) = agent::launch_agent(&kind, false).await {
                         let state: State<'_, AppState> = app_handle.state();
                         *state.cdp_port.lock().unwrap() = Some(port);
                         
                         if config.enabled {
                             log::info!("Auto-applying theme {}", config.selected_theme_id);
                             if let Some(theme) = get_theme(&app_handle, &config.selected_theme_id) {
-                                if let Ok(script) = generate_injection_script(&theme) {
-                                    if let Ok(ident) = cdp::inject_theme(port, &script).await {
+                                if let Ok(script) = generate_injection_script(&theme, &kind) {
+                                    if let Ok(ident) = cdp::inject_theme(port, &kind, &script).await {
                                         update_config(|c| { c.active_identifier = Some(ident.clone()); });
                                         *state.active_identifier.lock().unwrap() = Some(ident);
                                     }

@@ -1,4 +1,4 @@
-/* CSS Design System for Codex Theme Companion */
+/* CSS Design System for Agent Theme Companion */
 :root {
   --color-bg-base: #0f0707;
   --color-bg-panel: rgba(26, 14, 14, 0.55);
@@ -390,11 +390,6 @@ input:checked + .slider:before {
   text-transform: uppercase;
 }
 
-.badge-mascot {
-  background-color: var(--color-accent);
-  color: #120c00;
-}
-
 .badge-custom {
   background-color: var(--color-primary);
   color: white;
@@ -708,4 +703,38 @@ input:checked + .slider:before {
   padding: 60px;
   color: var(--color-text-secondary);
   font-weight: 500;
+}
+
+/* Agent Selector Buttons */
+.agent-selector {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.agent-btn {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: var(--font-family);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.agent-btn:hover {
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.agent-btn.active {
+  color: var(--color-text-primary);
+  background: var(--color-primary);
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(255, 71, 71, 0.3);
 }
