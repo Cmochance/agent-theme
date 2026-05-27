@@ -522,9 +522,9 @@ function setupAgentSelector() {
         // Auto-apply theme to the new agent if enabled
         if (appConfig && appConfig.enabled && appConfig.selectedThemeId) {
           await applyTheme(appConfig.selectedThemeId);
+        } else {
+          notify(`已切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}`, 'info');
         }
-        
-        notify(`已切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}`, 'info');
       } catch (err) {
         notify(`切换失败: ${err}`, 'error');
         console.error(err);

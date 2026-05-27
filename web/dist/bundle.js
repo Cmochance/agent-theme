@@ -487,8 +487,9 @@ var require_app = __commonJS({
             await loadThemes();
             if (appConfig && appConfig.enabled && appConfig.selectedThemeId) {
               await applyTheme(appConfig.selectedThemeId);
+            } else {
+              notify(`\u5DF2\u5207\u6362\u5230 ${agent === "codex" ? "Codex" : "Antigravity"}`, "info");
             }
-            notify(`\u5DF2\u5207\u6362\u5230 ${agent === "codex" ? "Codex" : "Antigravity"}`, "info");
           } catch (err) {
             notify(`\u5207\u6362\u5931\u8D25: ${err}`, "error");
             console.error(err);
