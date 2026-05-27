@@ -23,7 +23,7 @@
       var el = document.getElementById('error-log');
       el.style.display = 'block';
       var p = document.createElement('p');
-      p.textContent = 'Promise: ' + e.reason;
+      p.textContent = 'Unhandled: ' + e.reason;
       el.appendChild(p);
     });
   </script>
@@ -40,6 +40,14 @@
       </div>
       
       <div class="status-bar card">
+        <div class="status-item">
+          <span class="status-label">Agent 应用</span>
+          <div class="agent-selector">
+            <button id="btn-agent-codex" class="agent-btn active" data-agent="codex">Codex</button>
+            <button id="btn-agent-antigravity" class="agent-btn" data-agent="antigravity">Antigravity</button>
+          </div>
+        </div>
+        
         <div class="status-item">
           <span class="status-label">Agent 状态</span>
           <div class="status-value">
@@ -90,18 +98,18 @@
     
     <footer class="app-footer">
       <div class="footer-status">
-        <span class="footer-status-label">系统通知：</span>
-        <span id="notification-text" class="notification-info">服务已就绪。</span>
+        <span class="footer-status-label">通知：</span>
+        <span id="notification-text" class="notification-info">就绪</span>
       </div>
-      <p class="copyright">Agent Theme Companion © 2026. Made with ❤️ for anime lovers.</p>
+      <p class="copyright">Agent Theme Companion · Made with ❤️</p>
     </footer>
   </div>
 
-  <!-- Upload & Crop Modal -->
+  <!-- Upload / Custom Theme Modal -->
   <div id="upload-modal" class="modal">
-    <div class="modal-content card">
+    <div class="modal-content">
       <div class="modal-header">
-        <h3>添加自定义背景</h3>
+        <h3>上传自定义背景</h3>
         <button id="btn-close-modal" class="close-btn">&times;</button>
       </div>
       <div class="modal-body">

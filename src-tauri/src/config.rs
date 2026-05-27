@@ -1,8 +1,91 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use lazy_static::lazy_static;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum AgentKind {
+    #[default]
+    Codex,
+    Antigravity,
+}
+
+impl fmt::Display for AgentKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AgentKind::Codex => write!(f, "Codex"),
+            AgentKind::Antigravity => write!(f, "Antigravity"),
+        }
+    }
+}
+
+impl AgentKind {
+    pub fn display_name_zh(&self) -> &str {
+        match self {
+            AgentKind::Codex => "Codex",
+            AgentKind::Antigravity => "Antigravity",
+        }
+    }
+
+    pub fn display_name_en(&self) -> &str {
+        match self {
+            AgentKind::Codex => "Codex",
+            AgentKind::Antigravity => "Antigravity",
+        }
+    }
+
+    /// Data directory name under ~/Library/Application Support/
+    pub fn data_dir_name(&self) -> &str {
+        match self {
+            AgentKind::Codex => "Codex",
+            AgentKind::Antigravity => "Antigravity",
+        }
+    }
+
+    /// Binary path inside the .app bundle
+    pub fn binary_path(&self) -> PathBuf {
+        let app_name = match self {
+            AgentKind::Codex => "Codex.app",
+            AgentKind::Antigravity => "Antigravity.app",
+        };
+        PathBuf::from("/Applications")
+            .join(app_name)
+            .join("Contents")
+            .join("MacOS")
+            .join(self.data_dir_name())
+    }
+
+    /// Process name patterns for detection
+    pub fn process_name_patterns(&self) -> Vec<&'static str> {
+        match self {
+            AgentKind::Codex => vec!["Codex"],
+            AgentKind::Antigravity => vec!["Antigravity"],
+        }
+    }
+
+    /// Binary path patterns for detection
+    pub fn binary_path_patterns(&self) -> Vec<&'static str> {
+        match self {
+            AgentKind::Codex => vec!["/Applications/Codex.app/"],
+            AgentKind::Antigravity => vec!["/Applications/Antigravity.app/"],
+        }
+    }
+
+    /// pkill patterns for force kill
+    pub fn pkill_patterns(&self) -> Vec<&'static str> {
+        match self {
+            AgentKind::Codex => vec![
+                "/Applications/Codex\\.app/",
+                "SkyComputerUseClient",
+                "Codex Computer Use\\.app",
+            ],
+            AgentKind::Antigravity => vec!["/Applications/Antigravity\\.app/"],
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -11,6 +94,8 @@ pub struct AppConfig {
     pub selected_theme_id: String,
     pub auto_launch_agent: bool,
     pub active_identifier: Option<String>,
+    #[serde(default)]
+    pub selected_agent: AgentKind,
 }
 
 impl Default for AppConfig {
@@ -20,6 +105,7 @@ impl Default for AppConfig {
             selected_theme_id: "carton".to_string(),
             auto_launch_agent: true,
             active_identifier: None,
+            selected_agent: AgentKind::default(),
         }
     }
 }
