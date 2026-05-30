@@ -1,11 +1,31 @@
 {
   "id": "azurlane",
-  "displayName": {
-    "zh": "碧蓝航线 (Azur Lane)",
-    "en": "Azur Lane"
-  },
+  "displayName": { "zh": "碧蓝航线", "en": "Azur Lane" },
   "background": "bg.jpg",
   "preview": "preview.jpg",
   "backgroundFit": "cover",
-  "backgroundPosition": "center top"
+  "backgroundPosition": "center top",
+  "style": {
+    "ink": "#eef2f8",
+    "ink2": "rgba(238,242,248,0.74)",
+    "ink3": "rgba(238,242,248,0.56)",
+    "ink4": "rgba(238,242,248,0.40)",
+    "accent": "#3fb6e8",
+    "accentSoft": "#8fd6f2",
+    "focus": "#5fc8f5",
+    "surface": "rgba(20,28,42,0.50)",
+    "glass": "rgba(20,28,42,0.60)",
+    "glassSoft": "rgba(20,28,42,0.52)",
+    "glassStrong": "rgba(20,28,42,0.78)",
+    "border": "rgba(206,224,244,0.14)",
+    "borderSoft": "rgba(206,224,244,0.07)",
+    "borderStrong": "rgba(206,224,244,0.26)",
+    "blur": "6px",
+    "hover": "rgba(206,224,244,0.10)",
+    "selection": "rgba(206,224,244,0.16)",
+    "scrimTop": "rgba(12,18,28,0.26)",
+    "scrimMid": "rgba(12,18,28,0.34)",
+    "scrimBot": "rgba(12,18,28,0.60)",
+    "baseColor": "#0c121c"
+  }
 }

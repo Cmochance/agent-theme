@@ -15,3 +15,9 @@ src-tauri/gen/
 
 # Debug artifacts
 /tmp/
+
+# Theme tuning lab (local, untracked)
+.theme-lab/
+
+# Theme source images (large originals; generated bg.jpg ships instead)
+theme-sources/

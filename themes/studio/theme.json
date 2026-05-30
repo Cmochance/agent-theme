@@ -1,0 +1,31 @@
+{
+  "id": "studio",
+  "displayName": { "zh": "晴室", "en": "Studio" },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top",
+  "style": {
+    "ink": "#f4ebdf",
+    "ink2": "rgba(244,235,223,0.74)",
+    "ink3": "rgba(244,235,223,0.56)",
+    "ink4": "rgba(244,235,223,0.40)",
+    "accent": "#e0a94e",
+    "accentSoft": "#f0c97d",
+    "focus": "#f2b75a",
+    "surface": "rgba(28,22,16,0.50)",
+    "glass": "rgba(28,22,16,0.60)",
+    "glassSoft": "rgba(28,22,16,0.52)",
+    "glassStrong": "rgba(28,22,16,0.78)",
+    "border": "rgba(244,235,223,0.14)",
+    "borderSoft": "rgba(244,235,223,0.07)",
+    "borderStrong": "rgba(244,235,223,0.26)",
+    "blur": "6px",
+    "hover": "rgba(244,235,223,0.10)",
+    "selection": "rgba(244,235,223,0.16)",
+    "scrimTop": "rgba(20,15,11,0.26)",
+    "scrimMid": "rgba(20,15,11,0.34)",
+    "scrimBot": "rgba(20,15,11,0.60)",
+    "baseColor": "#1b1512"
+  }
+}

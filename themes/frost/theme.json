@@ -1,0 +1,31 @@
+{
+  "id": "frost",
+  "displayName": { "zh": "霜银", "en": "Frost" },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "50% 8%",
+  "style": {
+    "ink": "#eef1f7",
+    "ink2": "rgba(238,241,247,0.74)",
+    "ink3": "rgba(238,241,247,0.56)",
+    "ink4": "rgba(238,241,247,0.40)",
+    "accent": "#4f6cb0",
+    "accentSoft": "#8fa3d8",
+    "focus": "#6a86cc",
+    "surface": "rgba(20,24,36,0.50)",
+    "glass": "rgba(20,24,36,0.60)",
+    "glassSoft": "rgba(20,24,36,0.52)",
+    "glassStrong": "rgba(20,24,36,0.78)",
+    "border": "rgba(206,214,235,0.14)",
+    "borderSoft": "rgba(206,214,235,0.07)",
+    "borderStrong": "rgba(206,214,235,0.26)",
+    "blur": "6px",
+    "hover": "rgba(206,214,235,0.10)",
+    "selection": "rgba(206,214,235,0.16)",
+    "scrimTop": "rgba(14,16,24,0.26)",
+    "scrimMid": "rgba(14,16,24,0.34)",
+    "scrimBot": "rgba(14,16,24,0.60)",
+    "baseColor": "#0e1018"
+  }
+}

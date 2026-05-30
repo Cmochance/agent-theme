@@ -7,5 +7,28 @@
   "background": "bg.jpg",
   "preview": "preview.jpg",
   "backgroundFit": "cover",
-  "backgroundPosition": "center top"
+  "backgroundPosition": "50% 4%",
+  "style": {
+    "ink": "#f4ebdf",
+    "ink2": "rgba(244,235,223,.74)",
+    "ink3": "rgba(244,235,223,.56)",
+    "ink4": "rgba(244,235,223,.40)",
+    "accent": "#e08a55",
+    "accentSoft": "#e6b48a",
+    "focus": "#ffce86",
+    "surface": "rgba(26,18,12,.50)",
+    "glass": "rgba(30,21,14,.60)",
+    "glassSoft": "rgba(34,24,16,.52)",
+    "glassStrong": "rgba(22,15,10,.78)",
+    "border": "rgba(255,228,201,.14)",
+    "borderSoft": "rgba(255,228,201,.07)",
+    "borderStrong": "rgba(255,228,201,.26)",
+    "blur": "6px",
+    "hover": "rgba(255,236,210,.10)",
+    "selection": "rgba(255,236,210,.16)",
+    "scrimTop": "rgba(18,12,8,.26)",
+    "scrimMid": "rgba(17,11,7,.34)",
+    "scrimBot": "rgba(11,7,5,.60)",
+    "baseColor": "#160f0a"
+  }
 }

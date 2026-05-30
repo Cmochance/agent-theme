@@ -110,9 +110,30 @@ Hover over a custom theme card and click the delete button. Built-in themes cann
   "background": "bg.jpg",
   "preview": "preview.jpg",
   "backgroundFit": "cover",
-  "backgroundPosition": "center top"
+  "backgroundPosition": "50% 4%",
+  "style": {
+    "ink": "#f4ebdf",
+    "accent": "#e08a55",
+    "glass": "rgba(30,21,14,.52)",
+    "glassStrong": "rgba(22,15,10,.72)",
+    "glassSoft": "rgba(26,18,12,.80)",
+    "blur": "26px",
+    "scrimTop": "rgba(18,12,8,.26)",
+    "scrimMid": "rgba(17,11,7,.34)",
+    "scrimBot": "rgba(11,7,5,.60)",
+    "baseColor": "#160f0a"
+  }
 }
 ```
+
+`background`/`backgroundFit`/`backgroundPosition` control the image itself; the optional `style` block drives the **modular Codex theme**:
+
+- **Token override** — for current Codex (Tailwind v4 + `--color-token-*` design tokens) the injection overrides semantic tokens rather than fixed container selectors, so it tracks app updates; main surfaces are made transparent to reveal the background image.
+- **Per-module frosted glass** — sidebar (`glass`), composer input (`glassSoft`), and dialogs/menus (`glassStrong`) each use a `backdrop-filter` at a distinct opacity + `blur`, sampling the same background image behind them, so **each module's background matches perfectly by construction**.
+- **Per-level text colours** — `ink`/`ink2`/`ink3`/`ink4` tune primary/secondary/tertiary/disabled text; `accent` unifies links, focus, and the send button into the character's signature colour.
+- **Readability scrim** — `scrimTop`/`scrimMid`/`scrimBot` define a top-to-bottom darkening gradient that keeps text legible over the art.
+
+Omit `style` to fall back to neutral dark-glass defaults (works with any background image). The local, untracked `.theme-lab/` holds `build-assets.sh` (slices the source image into per-module crops at different sizes/opacities/masks) and `cdp.mjs` (the inject + screenshot tuning harness).
 
 ## Architecture
 

@@ -110,9 +110,30 @@ Agent Theme 是一个独立的桌面应用（Tauri v2），它与 Codex Desktop 
   "background": "bg.jpg",
   "preview": "preview.jpg",
   "backgroundFit": "cover",
-  "backgroundPosition": "center top"
+  "backgroundPosition": "50% 4%",
+  "style": {
+    "ink": "#f4ebdf",
+    "accent": "#e08a55",
+    "glass": "rgba(30,21,14,.52)",
+    "glassStrong": "rgba(22,15,10,.72)",
+    "glassSoft": "rgba(26,18,12,.80)",
+    "blur": "26px",
+    "scrimTop": "rgba(18,12,8,.26)",
+    "scrimMid": "rgba(17,11,7,.34)",
+    "scrimBot": "rgba(11,7,5,.60)",
+    "baseColor": "#160f0a"
+  }
 }
 ```
+
+`background`/`backgroundFit`/`backgroundPosition` 控制背景图本身;可选的 `style` 块驱动 Codex 的**模块化主题**:
+
+- **令牌覆盖**——注入针对当前 Codex(Tailwind v4 + `--color-token-*` 设计令牌)覆盖语义令牌而非写死的容器选择器,会跟随应用更新;主表面被透明化以露出背景图。
+- **各模块磨砂玻璃**——侧栏(`glass`)、输入框(`glassSoft`)、对话框/菜单(`glassStrong`)各用不同不透明度 + `blur` 的 `backdrop-filter` 实时采样其背后的同一张背景图,从而**各模块背景天然完美匹配**。
+- **分级字体配色**——`ink`/`ink2`/`ink3`/`ink4` 按正文/次级/三级/禁用微调;`accent` 把链接、焦点、发送按钮统一为角色主色调。
+- **可读性 scrim**——`scrimTop`/`scrimMid`/`scrimBot` 定义从上到下的暗化渐变,保证图上文字清晰。
+
+省略 `style` 时回退到中性暗玻璃默认值(任何背景图都可用)。`.theme-lab/`(本地、未纳入版本控制)内含 `build-assets.sh`(把源图切割为不同尺寸/透明度/蒙版的模块切片)与 `cdp.mjs`(注入 + 截图调参工具)。
 
 ## 技术架构
 

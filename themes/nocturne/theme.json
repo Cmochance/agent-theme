@@ -1,0 +1,31 @@
+{
+  "id": "nocturne",
+  "displayName": { "zh": "夜合", "en": "Nocturne" },
+  "background": "bg.jpg",
+  "preview": "preview.jpg",
+  "backgroundFit": "cover",
+  "backgroundPosition": "center top",
+  "style": {
+    "ink": "#eef1f7",
+    "ink2": "rgba(238,241,247,0.74)",
+    "ink3": "rgba(238,241,247,0.56)",
+    "ink4": "rgba(238,241,247,0.40)",
+    "accent": "#7cc5d6",
+    "accentSoft": "#a9dde9",
+    "focus": "#9bd6e4",
+    "surface": "rgba(20,26,32,0.50)",
+    "glass": "rgba(20,26,32,0.60)",
+    "glassSoft": "rgba(20,26,32,0.52)",
+    "glassStrong": "rgba(15,20,25,0.78)",
+    "border": "rgba(205,221,228,0.14)",
+    "borderSoft": "rgba(205,221,228,0.07)",
+    "borderStrong": "rgba(205,221,228,0.26)",
+    "blur": "6px",
+    "hover": "rgba(205,221,228,0.10)",
+    "selection": "rgba(124,197,214,0.16)",
+    "scrimTop": "rgba(13,17,21,0.26)",
+    "scrimMid": "rgba(13,17,21,0.34)",
+    "scrimBot": "rgba(13,17,21,0.60)",
+    "baseColor": "#0d1115"
+  }
+}
