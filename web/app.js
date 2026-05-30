@@ -18,10 +18,7 @@ let startY = 0;
 const statusDot = document.getElementById('agent-status-dot');
 const statusText = document.getElementById('agent-status-text');
 const cdpPortText = document.getElementById('cdp-port-text');
-const autoLaunchToggle = document.getElementById('auto-launch-toggle');
 const themeEnabledToggle = document.getElementById('theme-enabled-toggle');
-const btnStartAgent = document.getElementById('btn-start-agent');
-const btnRestartAgent = document.getElementById('btn-restart-agent');
 const themesGrid = document.getElementById('themes-grid');
 const notificationText = document.getElementById('notification-text');
 const btnAgentCodex = document.getElementById('btn-agent-codex');
@@ -41,8 +38,25 @@ const btnSaveCrop = document.getElementById('btn-save-crop');
 
 // Notifications
 function notify(text, type = 'info') {
-  notificationText.textContent = text;
-  notificationText.className = `notification-info ${type}`;
+  if (notificationText) {
+    notificationText.textContent = text;
+    notificationText.className = `notification-info ${type}`;
+  }
+  console.log(`[${type}] ${text}`);
+}
+
+// Generic invoke with notify feedback and status refresh
+async function invokeWithNotify(command, args, successMsg) {
+  try {
+    await invoke(command, args);
+    notify(successMsg, 'info');
+    await refreshStatus();
+    loadThemes();
+  } catch (err) {
+    notify(`${successMsg} failed: ${err}`, 'error');
+    console.error(err);
+    throw err;
+  }
 }
 
 // Fetch Status
@@ -52,7 +66,7 @@ async function loadThemes() {
     currentThemes = await invoke('get_all_themes');
     renderThemesGrid();
   } catch (err) {
-    notify('无法获取主题列表', 'error');
+    notify('Failed to load themes', 'error');
     console.error(err);
   }
 }
@@ -62,7 +76,7 @@ function renderThemesGrid() {
   themesGrid.innerHTML = '';
   
   if (currentThemes.length === 0) {
-    themesGrid.innerHTML = '<div class="loading-placeholder">暂无可用主题</div>';
+    themesGrid.innerHTML = '<div class="loading-placeholder">No themes available</div>';
     return;
   }
   
@@ -97,7 +111,7 @@ function renderThemesGrid() {
     details.appendChild(name);
     
     const description = document.createElement('p');
-    description.textContent = theme.isCustom ? '用户上传背景' : '内置壁纸';
+    description.textContent = theme.isCustom ? 'User uploaded' : 'Built-in';
     details.appendChild(description);
     
     // Badges
@@ -117,7 +131,7 @@ function renderThemesGrid() {
     // Action status text
     const actionText = document.createElement('span');
     actionText.className = 'theme-action';
-    actionText.textContent = isActive ? '应用中' : '使用主题';
+    actionText.textContent = isActive ? 'Applied' : 'Use Theme';
     info.appendChild(actionText);
     
     card.appendChild(info);
@@ -127,10 +141,10 @@ function renderThemesGrid() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-theme-btn';
       deleteBtn.innerHTML = '&times;';
-      deleteBtn.title = '删除自定义主题';
+      deleteBtn.title = 'Delete custom theme';
       deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation(); // Avoid triggering card selection
-        if (confirm('确认删除自定义背景主题？')) {
+        if (confirm('Delete this custom background?')) {
           await deleteCustomTheme();
         }
       });
@@ -153,7 +167,7 @@ function renderThemesGrid() {
   uploadCard.appendChild(uploadIcon);
   
   const uploadText = document.createElement('span');
-  uploadText.textContent = '自定义背景';
+  uploadText.textContent = 'Custom Background';
   uploadCard.appendChild(uploadText);
   
   uploadCard.addEventListener('click', () => {
@@ -165,71 +179,21 @@ function renderThemesGrid() {
 
 // Apply selected theme
 async function applyTheme(themeId) {
-  notify(`正在应用主题 "${themeId}"...`, 'info');
-  try {
-    await invoke('apply_theme', { themeId });
-    notify('主题应用成功！', 'info');
-    await refreshStatus();
-    loadThemes();
-  } catch (err) {
-    notify(`应用主题失败: ${err}`, 'error');
-    console.error(err);
-  }
+  await invokeWithNotify('apply_theme', { themeId }, `Theme "${themeId}" applied`);
 }
 
 // Clear active theme (Disable)
 async function clearActiveTheme() {
-  notify('正在清除当前主题...', 'info');
   try {
-    await invoke('clear_theme');
-    notify('主题已成功清除。', 'info');
-    await refreshStatus();
-    loadThemes();
-  } catch (err) {
-    notify(`清除主题失败: ${err}`, 'error');
-    themeEnabledToggle.checked = true; // revert checkbox
-    console.error(err);
+    await invokeWithNotify('clear_theme', undefined, 'Theme cleared');
+  } catch {
+    themeEnabledToggle.checked = true;
   }
 }
 
 // Delete custom theme
 async function deleteCustomTheme() {
-  notify('正在删除自定义主题...', 'info');
-  try {
-    await invoke('delete_custom_theme_cmd');
-    notify('自定义主题已删除。', 'info');
-    await refreshStatus();
-    loadThemes();
-  } catch (err) {
-    notify(`删除失败: ${err}`, 'error');
-    console.error(err);
-  }
-}
-
-// Launch Agent process
-async function startAgent(forceClean = false) {
-  notify('正在启动 Agent App...', 'info');
-  try {
-    await invoke('restart_agent');
-    notify('Agent 已启动！', 'info');
-    setTimeout(refreshStatus, 3000);
-  } catch (err) {
-    notify(`启动失败: ${err}`, 'error');
-    console.error(err);
-  }
-}
-
-// Restart Agent process
-async function restartAgent() {
-  notify('正在重启 Agent App...', 'info');
-  try {
-    await invoke('restart_agent');
-    notify('Agent 已成功重启！', 'info');
-    setTimeout(refreshStatus, 3000);
-  } catch (err) {
-    notify(`重启失败: ${err}`, 'error');
-    console.error(err);
-  }
+  await invokeWithNotify('delete_custom_theme_cmd', undefined, 'Custom theme deleted');
 }
 
 // Save Config Toggles
@@ -296,7 +260,7 @@ fileInput.addEventListener('change', (e) => {
 
 function handleSelectedFile(file) {
   if (!file.type.startsWith('image/')) {
-    alert('请选择有效的图片文件！');
+    alert('Please select a valid image file!');
     return;
   }
   
@@ -483,11 +447,11 @@ function performCrop() {
 btnSaveCrop.addEventListener('click', async () => {
   const cropped = performCrop();
   if (!cropped) {
-    alert('裁剪出错，请重试！');
+    alert('Crop error, please retry!');
     return;
   }
   
-  notify('正在保存并应用自定义背景...', 'info');
+  notify('Saving custom background...', 'info');
   closeUploadModal();
   
   try {
@@ -495,12 +459,12 @@ btnSaveCrop.addEventListener('click', async () => {
       bgBase64: cropped.bgImage,
       previewBase64: cropped.previewImage
     });
-    notify('自定义背景保存并应用成功！', 'info');
+    notify('Custom background saved and applied!', 'info');
     await refreshStatus();
     loadThemes();
     await applyTheme('custom');
   } catch (err) {
-    notify(`上传请求失败: ${err}`, 'error');
+    notify(`Upload failed: ${err}`, 'error');
     console.error(err);
   }
 });
@@ -513,7 +477,7 @@ function setupAgentSelector() {
       const agent = btn.dataset.agent;
       if (appConfig && appConfig.selectedAgent === agent) return;
       
-      notify(`切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}...`, 'info');
+      notify(`Switching to  ${agent === 'codex' ? 'Codex' : 'Antigravity'}...`, 'info');
       try {
         await invoke('set_selected_agent', { agent });
         await refreshStatus();
@@ -523,10 +487,10 @@ function setupAgentSelector() {
         if (appConfig && appConfig.enabled && appConfig.selectedThemeId) {
           await applyTheme(appConfig.selectedThemeId);
         } else {
-          notify(`已切换到 ${agent === 'codex' ? 'Codex' : 'Antigravity'}`, 'info');
+          notify(`Switched to  ${agent === 'codex' ? 'Codex' : 'Antigravity'}`, 'info');
         }
       } catch (err) {
-        notify(`切换失败: ${err}`, 'error');
+        notify(`Switch failed: ${err}`, 'error');
         console.error(err);
       }
     });
@@ -534,15 +498,6 @@ function setupAgentSelector() {
 }
 
 // Event Listeners for DOM Toggles & Actions
-autoLaunchToggle.addEventListener('change', async (e) => {
-  try {
-    await invoke('set_auto_launch', { enabled: e.target.checked });
-    await refreshStatus();
-  } catch (err) {
-    console.error('Failed to update auto launch:', err);
-  }
-});
-
 themeEnabledToggle.addEventListener('change', async (e) => {
   themeEnabledToggle.disabled = true;
   if (e.target.checked) {
@@ -556,9 +511,6 @@ themeEnabledToggle.addEventListener('change', async (e) => {
   }
   themeEnabledToggle.disabled = false;
 });
-
-btnStartAgent.addEventListener('click', () => startAgent(false));
-btnRestartAgent.addEventListener('click', () => restartAgent());
 
 btnCloseModal.addEventListener('click', closeUploadModal);
 btnCancelCrop.addEventListener('click', openUploadModal);
@@ -583,19 +535,16 @@ async function refreshStatus() {
     // Update Agent Process status
     if (status.running) {
       statusDot.className = 'dot online';
-      statusText.textContent = '正在运行';
-      btnStartAgent.disabled = true;
+      statusText.textContent = 'Running';
     } else {
       statusDot.className = 'dot offline';
-      statusText.textContent = '未运行';
-      btnStartAgent.disabled = false;
+      statusText.textContent = 'Not running';
     }
     
     // Update CDP port
-    cdpPortText.textContent = status.cdpPort || '未绑定';
+    cdpPortText.textContent = status.cdpPort || 'Not bound';
     
     // Update Toggles
-    autoLaunchToggle.checked = appConfig.autoLaunchAgent;
     themeEnabledToggle.checked = appConfig.enabled;
     
     // Update agent selector buttons
@@ -603,7 +552,7 @@ async function refreshStatus() {
     
     return status;
   } catch (err) {
-    notify('无法获取后端状态', 'error');
+    notify('Failed to get backend status', 'error');
     console.error(err);
   }
 }

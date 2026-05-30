@@ -1,20 +1,20 @@
 /* CSS Design System for Agent Theme Companion */
 :root {
-  --color-bg-base: #0f0707;
-  --color-bg-panel: rgba(26, 14, 14, 0.55);
-  --color-bg-card: rgba(38, 20, 20, 0.4);
-  --color-border: rgba(230, 70, 70, 0.16);
-  --color-border-hover: rgba(255, 71, 71, 0.35);
-  
-  --color-primary: #ff4747;
-  --color-primary-hover: #ff6e6e;
-  --color-accent: #ffd700;
+  --color-bg-base: #f4f7fb;
+  --color-bg-panel: rgba(255, 255, 255, 0.75);
+  --color-bg-card: rgba(240, 245, 255, 0.6);
+  --color-border: rgba(59, 130, 246, 0.15);
+  --color-border-hover: rgba(59, 130, 246, 0.35);
+ 
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-accent: #0ea5e9;
   --color-success: #10b981;
   --color-error: #ef4444;
-  
-  --color-text-primary: #fcfcfc;
-  --color-text-secondary: rgba(250, 240, 240, 0.75);
-  --color-text-muted: rgba(250, 240, 240, 0.45);
+ 
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
   
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -43,9 +43,9 @@ body {
   height: 100vh;
   z-index: -1;
   background: 
-    radial-gradient(circle at 10% 20%, rgba(230, 50, 50, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.04) 0%, transparent 40%),
-    linear-gradient(135deg, #0e0505 0%, #160a0a 100%);
+    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.04) 0%, transparent 40%),
+    linear-gradient(135deg, #f0f4fa 0%, #e8eef8 100%);
 }
 
 .app-container {
@@ -66,13 +66,13 @@ body {
   border-radius: 16px;
   backdrop-filter: blur(20px) saturate(110%);
   -webkit-backdrop-filter: blur(20px) saturate(110%);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(30, 41, 59, 0.08);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover {
   border-color: var(--color-border-hover);
-  box-shadow: 0 12px 40px 0 rgba(230, 50, 50, 0.08);
+  box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.08);
 }
 
 /* App Header */
@@ -117,17 +117,20 @@ h1 {
 /* Status Bar */
 .status-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  padding: 20px 24px;
-  gap: 24px;
+  padding: 12px 16px;
+  gap: 20px;
+  width: fit-content;
+  align-self: center;
 }
 
 .status-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 130px;
+  width: 120px;
+  align-items: center;
 }
 
 .status-label {
@@ -154,17 +157,18 @@ h1 {
   height: 10px;
   border-radius: 50%;
   display: inline-block;
-  box-shadow: 0 0 8px currentColor;
+  background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.4);
 }
 
 .dot.offline {
-  color: var(--color-error);
-  background-color: var(--color-error);
+  background: radial-gradient(circle at 35% 35%, #f87171, #dc2626);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.4);
 }
 
 .dot.online {
-  color: var(--color-success);
-  background-color: var(--color-success);
+  background: radial-gradient(circle at 35% 35%, #4ade80, #16a34a);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.4);
 }
 
 .toggle-item {
@@ -192,9 +196,10 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%);
   transition: .3s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(100,110,130,0.3);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.5);
 }
 
 .slider:before {
@@ -204,18 +209,19 @@ h1 {
   width: 16px;
   left: 3px;
   bottom: 3px;
-  background-color: var(--color-text-secondary);
+  background: radial-gradient(circle at 40% 35%, #ffffff, #e5e7eb);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.8);
   transition: .3s;
 }
 
 input:checked + .slider {
-  background-color: var(--color-primary);
-  border-color: rgba(255, 71, 71, 0.4);
+  background: linear-gradient(180deg, #6ee7b7 0%, #22c55e 100%);
+  border-color: rgba(34,197,94,0.4);
 }
 
 input:checked + .slider:before {
   transform: translateX(24px);
-  background-color: var(--color-text-primary);
+  background: radial-gradient(circle at 40% 35%, #ffffff, #e5e7eb);
 }
 
 .slider.round {
@@ -249,13 +255,13 @@ input:checked + .slider:before {
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
-  box-shadow: 0 4px 14px 0 rgba(255, 71, 71, 0.35);
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.35);
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px 0 rgba(255, 71, 71, 0.45);
+  box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.45);
 }
 
 .btn-primary:active {
@@ -263,14 +269,14 @@ input:checked + .slider:before {
 }
 
 .btn-secondary {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(59, 130, 246, 0.07);
   color: var(--color-text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.1);
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.18);
 }
 
 /* Main Section */
@@ -295,10 +301,10 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   gap: 12px;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(59, 130, 246, 0.03);
   padding: 8px 16px;
   border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.06);
 }
 
 .switch-label {
@@ -326,7 +332,7 @@ input:checked + .slider:before {
 
 .theme-card.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 16px 0 rgba(255, 71, 71, 0.25);
+  box-shadow: 0 0 16px 0 rgba(59, 130, 246, 0.25);
 }
 
 .theme-preview {
@@ -352,7 +358,7 @@ input:checked + .slider:before {
   width: 100%;
   height: 100%;
   z-index: 2;
-  background: linear-gradient(to top, rgba(15, 7, 7, 0.95) 15%, rgba(15, 7, 7, 0.4) 60%, transparent 100%);
+  background: linear-gradient(to top, rgba(241, 245, 250, 0.92) 15%, rgba(241, 245, 250, 0.4) 60%, transparent 100%);
 }
 
 .theme-info {
@@ -442,8 +448,8 @@ input:checked + .slider:before {
 
 /* Upload Card (Add New Theme) */
 .upload-card {
-  border: 2px dashed rgba(255, 255, 255, 0.15);
-  background-color: rgba(255, 255, 255, 0.02);
+  border: 2px dashed rgba(59, 130, 246, 0.12);
+  background-color: rgba(59, 130, 246, 0.02);
   border-radius: 16px;
   height: 250px;
   display: flex;
@@ -457,7 +463,7 @@ input:checked + .slider:before {
 
 .upload-card:hover {
   border-color: var(--color-primary);
-  background-color: rgba(255, 71, 71, 0.03);
+  background-color: rgba(59, 130, 246, 0.03);
 }
 
 .upload-icon {
@@ -484,7 +490,7 @@ input:checked + .slider:before {
   width: 100vw;
   height: 100vh;
   z-index: 1000;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(10px);
   align-items: center;
   justify-content: center;
@@ -540,7 +546,7 @@ input:checked + .slider:before {
 
 /* Drag and Drop Zone */
 .drop-zone {
-  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border: 2px dashed rgba(59, 130, 246, 0.12);
   border-radius: 12px;
   padding: 40px 20px;
   text-align: center;
@@ -554,7 +560,7 @@ input:checked + .slider:before {
 
 .drop-zone.hover {
   border-color: var(--color-primary);
-  background-color: rgba(255, 71, 71, 0.05);
+  background-color: rgba(59, 130, 246, 0.05);
 }
 
 .drop-icon {
@@ -582,7 +588,7 @@ input:checked + .slider:before {
 .crop-container {
   width: 100%;
   height: 350px;
-  background-color: #050202;
+  background-color: #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
   position: relative;
@@ -606,7 +612,7 @@ input:checked + .slider:before {
   width: 300px;
   height: 300px;
   border: 2px solid var(--color-primary);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 0 0 9999px rgba(30, 41, 59, 0.2);
   pointer-events: none;
   border-radius: 4px;
 }
@@ -616,7 +622,7 @@ input:checked + .slider:before {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background-color: rgba(255, 71, 71, 0.9);
+  background-color: rgba(59, 130, 246, 0.9);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -675,10 +681,10 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(59, 130, 246, 0.02);
   padding: 6px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.06);
 }
 
 .footer-status-label {
@@ -708,33 +714,46 @@ input:checked + .slider:before {
 /* Agent Selector Buttons */
 .agent-selector {
   display: flex;
-  gap: 0;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
+  align-self: center;
+  width: fit-content;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(59, 130, 246, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  box-shadow: inset 0 2px 4px rgba(30, 41, 59, 0.1), inset 0 -1px 2px rgba(255, 255, 255, 0.6);
+  padding: 4px;
   overflow: hidden;
 }
 
 .agent-btn {
-  padding: 6px 16px;
+  width: 120px;
+  padding: 6px 0;
   font-size: 0.85rem;
   font-weight: 500;
   font-family: var(--font-family);
-  color: var(--color-text-muted);
-  background: transparent;
+  color: #1e293b;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(230,238,250,0.85) 100%);
   border: none;
+  border-top: 1px solid rgba(255,255,255,0.95);
+  border-bottom: 1px solid rgba(180,200,230,0.35);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(30,41,59,0.12), 0 -1px 0 rgba(255,255,255,0.8) inset;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
 .agent-btn:hover {
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.05);
+  color: #1e293b;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(215,230,255,0.9) 100%);
 }
 
 .agent-btn.active {
-  color: var(--color-text-primary);
-  background: var(--color-primary);
+  color: #ffffff;
+  background: linear-gradient(180deg, #7bb3f9 0%, #4a8de8 100%);
   border-radius: 6px;
-  box-shadow: 0 0 8px rgba(255, 71, 71, 0.3);
+  border-top: 1px solid rgba(255,255,255,0.4);
+  border-bottom: 1px solid rgba(30,80,160,0.25);
+  box-shadow: 0 2px 6px rgba(37,99,235,0.3), 0 -1px 0 rgba(255,255,255,0.3) inset;
 }

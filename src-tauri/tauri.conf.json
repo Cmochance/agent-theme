@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.agenttheme.companion",
   "build": {
-    "frontendDist": "../web/dist"
+    "frontendDist": "../web"
   },
   "app": {
     "withGlobalTauri": true,

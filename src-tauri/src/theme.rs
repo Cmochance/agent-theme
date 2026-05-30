@@ -148,7 +148,8 @@ pub fn generate_injection_script(theme: &Theme, kind: &AgentKind) -> Result<Stri
     }
 }
 
-fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
+/// Read theme background image and encode as a base64 data URI.
+fn encode_background(theme: &Theme) -> Result<String, String> {
     let bg_path = theme.dir.join(&theme.background);
     let bg_bytes = fs::read(&bg_path)
         .map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
@@ -157,30 +158,52 @@ fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
     } else {
         "jpeg"
     };
-    let bg_data_uri = format!(
+    Ok(format!(
         "data:image/{};base64,{}",
         bg_ext,
         base64_engine.encode(&bg_bytes)
-    );
+    ))
+}
 
-    let script = format!(
+/// Wrap agent-specific CSS into the JS injection boilerplate.
+fn wrap_injection_css(css: &str, agent_label: &str) -> String {
+    format!(
         r#"
         (function() {{
-            // Clear existing theme first
             const existingStyle = document.getElementById('agent-theme-style');
             if (existingStyle) existingStyle.remove();
 
-            // Inject styles
             const style = document.createElement('style');
             style.id = 'agent-theme-style';
-            style.textContent = `
-                body {{
-                    background-image: url('{}') !important;
+            style.textContent = `{css}`;
+            document.head.appendChild(style);
+
+            console.log('{agent_label} theme applied successfully.');
+        }})();
+    "#,
+        css = css,
+        agent_label = agent_label,
+    )
+}
+
+/// Common CSS snippet for body background image.
+fn body_bg_css(bg_data_uri: &str) -> String {
+    format!(
+        r#"body {{
+                    background-image: url('{bg}') !important;
                     background-size: cover !important;
                     background-position: center !important;
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
-                }}
+                }}"#,
+        bg = bg_data_uri,
+    )
+}
+
+fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
+    let bg = encode_background(theme)?;
+    let css = format!(
+        r#"{body_bg}
                 
                 #sky-root > div,
                 #sky-root > div > div {{
@@ -203,14 +226,11 @@ fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
                     --sk-background: transparent !important;
                 }}
                 
-                /* Dark overlay covering the entire UI */
                 #sky-root::before {{
                     content: '';
                     position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
                     background-color: rgba(0, 0, 0, 0.4) !important;
                     pointer-events: none;
                     z-index: 1;
@@ -221,69 +241,22 @@ fn generate_codex_injection_script(theme: &Theme) -> Result<String, String> {
                     z-index: 2;
                 }}
                 
-                #sky-root .ds-sidebar::after {{
-                    display: none !important;
-                }}
-                #sky-root .ds-sidebar + div::before {{
-                    display: none !important;
-                }}
-                .ds-sidebar-layout-resizer {{
-                    display: none !important;
-                }}
+                #sky-root .ds-sidebar::after,
+                #sky-root .ds-sidebar + div::before,
+                .ds-sidebar-layout-resizer,
                 .ds-sidebar-layout-resizer + div {{
                     display: none !important;
-                }}
-            `;
-            document.head.appendChild(style);
-
-            console.log('Agent theme applied successfully.');
-        }})();
-    "#,
-        bg_data_uri
+                }}"#,
+        body_bg = body_bg_css(&bg),
     );
-
-    Ok(script)
+    Ok(wrap_injection_css(&css, "Codex"))
 }
 
 fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String> {
-    let bg_path = theme.dir.join(&theme.background);
-    let bg_bytes = fs::read(&bg_path)
-        .map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
-    let bg_ext = if theme.background.ends_with(".png") {
-        "png"
-    } else {
-        "jpeg"
-    };
-    let bg_data_uri = format!(
-        "data:image/{};base64,{}",
-        bg_ext,
-        base64_engine.encode(&bg_bytes)
-    );
-
-    // Antigravity DOM structure (observed via CDP):
-    //   body.theme-standalone.theme-light
-    //   div#root > div.relative.w-screen.h-screen > ... > div.flex.flex-col > ...
-    //   Sidebar: div[role="navigation"][aria-label="Sidebar"] with .bg-sidebar
-    //   Main content: .bg-background, .text-foreground
-    //   CSS vars: --foreground, --background, --sidebar
-    let script = format!(
-        r#"
-        (function() {{
-            const existingStyle = document.getElementById('agent-theme-style');
-            if (existingStyle) existingStyle.remove();
-
-            const style = document.createElement('style');
-            style.id = 'agent-theme-style';
-            style.textContent = `
-                body {{
-                    background-image: url('{}') !important;
-                    background-size: cover !important;
-                    background-position: center !important;
-                    background-repeat: no-repeat !important;
-                    background-attachment: fixed !important;
-                }}
+    let bg = encode_background(theme)?;
+    let css = format!(
+        r#"{body_bg}
                 
-                /* Transparent background for all nested containers */
                 #root,
                 #root > div,
                 #root > div > div,
@@ -291,7 +264,6 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
                     background-color: transparent !important;
                 }}
 
-                /* Sidebar glass effect */
                 [role="navigation"][aria-label="Sidebar"],
                 .bg-sidebar {{
                     background-color: rgba(26, 26, 26, 0.75) !important;
@@ -300,19 +272,16 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
                     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
                 }}
 
-                /* Main content area glass effect */
                 .bg-background {{
                     background-color: transparent !important;
                 }}
 
-                /* Override Antigravity CSS variables for dark translucent look */
                 :root {{
                     --background: rgba(0, 0, 0, 0) !important;
                     --foreground: rgba(255, 255, 255, 0.95) !important;
                     --sidebar: rgba(26, 26, 26, 0.75) !important;
                 }}
 
-                /* Glass panels: dialogs, modals */
                 [role="dialog"],
                 .bg-card {{
                     background-color: rgba(26, 26, 26, 0.75) !important;
@@ -321,14 +290,11 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
                     border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 }}
 
-                /* Dark overlay */
                 #root::before {{
                     content: '';
                     position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
                     background-color: rgba(0, 0, 0, 0.4) !important;
                     pointer-events: none;
                     z-index: 1;
@@ -337,15 +303,8 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
                 #root > * {{
                     position: relative;
                     z-index: 2;
-                }}
-            `;
-            document.head.appendChild(style);
-
-            console.log('Antigravity theme applied successfully.');
-        }})();
-    "#,
-        bg_data_uri
+                }}"#,
+        body_bg = body_bg_css(&bg),
     );
-
-    Ok(script)
+    Ok(wrap_injection_css(&css, "Antigravity"))
 }

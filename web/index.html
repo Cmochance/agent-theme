@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,92 +31,59 @@
   
   <div class="app-container">
     <header class="app-header">
-      <div class="logo-area">
-        <span class="logo-icon">🎨</span>
-        <div>
-          <h1>Agent Theme Companion</h1>
-          <p class="subtitle">让你的 Agent App 焕发个性色彩</p>
-        </div>
+      <div class="agent-selector">
+        <button id="btn-agent-codex" class="agent-btn active" data-agent="codex">Codex</button>
+        <button id="btn-agent-antigravity" class="agent-btn" data-agent="antigravity">Antigravity</button>
       </div>
-      
-      <div class="status-bar card">
-        <div class="status-item">
-          <span class="status-label">Agent 应用</span>
-          <div class="agent-selector">
-            <button id="btn-agent-codex" class="agent-btn active" data-agent="codex">Codex</button>
-            <button id="btn-agent-antigravity" class="agent-btn" data-agent="antigravity">Antigravity</button>
-          </div>
-        </div>
-        
-        <div class="status-item">
-          <span class="status-label">Agent 状态</span>
+
+     <div class="status-bar card">
+      <div class="status-item">
           <div class="status-value">
             <span id="agent-status-dot" class="dot"></span>
-            <span id="agent-status-text">检测中...</span>
+            <span id="agent-status-text">Checking...</span>
           </div>
         </div>
         
         <div class="status-item">
-          <span class="status-label">CDP 调试端口</span>
           <span id="cdp-port-text" class="status-value highlight">-</span>
         </div>
         
         <div class="status-item toggle-item">
-          <span class="status-label">自动启动 Agent</span>
-          <label class="switch">
-            <input type="checkbox" id="auto-launch-toggle">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        
-        <div class="actions-group">
-          <button id="btn-start-agent" class="btn btn-primary">启动 Agent</button>
-          <button id="btn-restart-agent" class="btn btn-secondary">重启 Agent</button>
-        </div>
-      </div>
-    </header>
-    
-    <main class="app-main">
-      <div class="section-title">
-        <h2>选择背景主题</h2>
-        <div class="master-switch-area">
-          <span class="switch-label">启用主题注入</span>
           <label class="switch">
             <input type="checkbox" id="theme-enabled-toggle">
             <span class="slider round"></span>
           </label>
         </div>
+       
+      </div>
+    </header>
+    
+    <main class="app-main">
+      <div class="section-title">
       </div>
       
       <div id="themes-grid" class="themes-grid">
         <!-- Built-in and custom theme cards will be generated here -->
         
         <!-- Loading Placeholder -->
-        <div class="loading-placeholder">正在加载主题列表...</div>
+        <div class="loading-placeholder">Loading themes...</div>
       </div>
     </main>
     
-    <footer class="app-footer">
-      <div class="footer-status">
-        <span class="footer-status-label">通知：</span>
-        <span id="notification-text" class="notification-info">就绪</span>
-      </div>
-      <p class="copyright">Agent Theme Companion · Made with ❤️</p>
-    </footer>
   </div>
 
   <!-- Upload / Custom Theme Modal -->
   <div id="upload-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>上传自定义背景</h3>
+        <h3>Upload Custom Background</h3>
         <button id="btn-close-modal" class="close-btn">&times;</button>
       </div>
       <div class="modal-body">
         <div id="drop-zone" class="drop-zone">
           <span class="drop-icon">📤</span>
-          <p>拖拽图片到这里，或 <span class="browse-link">浏览文件</span></p>
-          <span class="file-info">支持 JPG, PNG，最大 20MB</span>
+          <p>Drag image here, or  <span class="browse-link">Browse Files</span></p>
+          <span class="file-info">JPG, PNG supported, max 20MB</span>
           <input type="file" id="file-input" accept="image/png, image/jpeg" style="display: none;">
         </div>
         
@@ -127,16 +94,16 @@
           </div>
           <div class="crop-controls">
             <div class="control-row">
-              <label for="zoom-slider">缩放:</label>
+              <label for="zoom-slider">Zoom:</label>
               <input type="range" id="zoom-slider" min="10" max="200" value="100">
             </div>
-            <p class="crop-tip">💡 提示：可以在图片上拖动以调整裁剪位置。</p>
+            <p class="crop-tip">💡 Tip: Drag on the image to adjust crop position.</p>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button id="btn-cancel-crop" class="btn btn-secondary" style="display: none;">重新选择</button>
-        <button id="btn-save-crop" class="btn btn-primary" style="display: none;">保存并应用</button>
+        <button id="btn-cancel-crop" class="btn btn-secondary" style="display: none;">Re-select</button>
+        <button id="btn-save-crop" class="btn btn-primary" style="display: none;">Save & Apply</button>
       </div>
     </div>
   </div>

@@ -4,6 +4,10 @@ node_modules/
 # Rust build artifacts
 src-tauri/target/
 
+# Frontend build output
+web/bundle.js
+web/dist/
+
 # macOS
 .DS_Store
 

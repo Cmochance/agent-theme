@@ -1,10 +1,9 @@
 {
-  "name": "web",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "name": "agent-theme-companion",
+  "version": "0.1.0",
+  "description": "Frontend for Agent Theme Companion",
   "scripts": {
-    "build": "esbuild app.js --bundle --format=iife --outfile=dist/bundle.js --platform=browser",
+    "build": "esbuild web/app.js --bundle --format=iife --outfile=web/bundle.js --platform=browser",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

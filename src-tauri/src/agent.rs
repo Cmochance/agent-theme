@@ -152,18 +152,3 @@ pub async fn launch_agent(kind: &AgentKind, force_clean: bool) -> Result<u16, St
         kind
     ))
 }
-
-/// Convenience: read the selected agent kind from the current config.
-pub fn current_kind() -> AgentKind {
-    crate::config::load_config().selected_agent
-}
-
-/// Convenience: detect if the selected agent's process is running.
-pub fn is_current_running() -> bool {
-    is_agent_process_running(&current_kind())
-}
-
-/// Convenience: get the DevTools port for the selected agent.
-pub fn current_port() -> Option<u16> {
-    read_port_from_file(&current_kind())
-}

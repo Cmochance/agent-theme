@@ -15,6 +15,28 @@ struct AppState {
     pub active_identifier: Mutex<Option<String>>,
 }
 
+/// Common logic: inject theme via CDP and persist the identifier.
+async fn inject_and_save(
+    app: &AppHandle,
+    state: &AppState,
+    port: u16,
+    kind: &AgentKind,
+    theme_id: &str,
+) -> Result<String, String> {
+    let theme = get_theme(app, theme_id).ok_or("Theme not found")?;
+    let script = generate_injection_script(&theme, kind)?;
+    let identifier = cdp::inject_theme(port, kind, &script).await?;
+
+    update_config(|c| {
+        c.enabled = true;
+        c.selected_theme_id = theme_id.to_string();
+        c.active_identifier = Some(identifier.clone());
+    });
+    *state.active_identifier.lock().unwrap() = Some(identifier.clone());
+
+    Ok(identifier)
+}
+
 #[tauri::command]
 async fn get_config() -> Result<AppConfig, String> {
     Ok(load_config())
@@ -74,7 +96,6 @@ async fn apply_theme(
 ) -> Result<(), String> {
     let config = load_config();
     let kind = config.selected_agent;
-    let theme = get_theme(&app, &theme_id).ok_or("Theme not found")?;
 
     // Read port once, release lock before any async work
     let need_launch = {
@@ -82,28 +103,14 @@ async fn apply_theme(
         p.is_none() || !agent::is_agent_process_running(&kind)
     };
 
-    if need_launch {
-        let cfg = load_config();
-        if cfg.auto_launch_agent {
-            let new_port = agent::launch_agent(&kind, false).await?;
-            *state.cdp_port.lock().unwrap() = Some(new_port);
-        }
+    if need_launch && load_config().auto_launch_agent {
+        let new_port = agent::launch_agent(&kind, false).await?;
+        *state.cdp_port.lock().unwrap() = Some(new_port);
     }
 
     let port = *state.cdp_port.lock().unwrap();
-
     if let Some(p) = port {
-        let script = generate_injection_script(&theme, &kind)?;
-
-        let identifier = cdp::inject_theme(p, &kind, &script).await?;
-
-        update_config(|c| {
-            c.enabled = true;
-            c.selected_theme_id = theme_id.clone();
-            c.active_identifier = Some(identifier.clone());
-        });
-
-        *state.active_identifier.lock().unwrap() = Some(identifier);
+        inject_and_save(&app, &state, p, &kind, &theme_id).await?;
     }
 
     Ok(())
@@ -249,28 +256,22 @@ pub fn run() {
                             *state.cdp_port.lock().unwrap() = Some(new_port);
 
                             if config.enabled {
-                                if let Some(theme) =
-                                    get_theme(&monitor_handle, &config.selected_theme_id)
+                                let theme_id = &config.selected_theme_id;
+                                match inject_and_save(
+                                    &monitor_handle,
+                                    &state,
+                                    new_port,
+                                    &kind,
+                                    theme_id,
+                                )
+                                .await
                                 {
-                                    if let Ok(script) = generate_injection_script(&theme, &kind) {
-                                        match cdp::inject_theme(new_port, &kind, &script).await {
-                                            Ok(ident) => {
-                                                log::info!("Re-injected theme after agent restart");
-                                                update_config(|c| {
-                                                    c.active_identifier = Some(ident.clone());
-                                                });
-                                                *state.active_identifier.lock().unwrap() =
-                                                    Some(ident);
-                                            }
-                                            Err(e) => {
-                                                log::error!(
-                                                    "Failed to re-inject theme on port {}: {}",
-                                                    new_port,
-                                                    e
-                                                );
-                                            }
-                                        }
-                                    }
+                                    Ok(_) => log::info!("Re-injected theme after agent restart"),
+                                    Err(e) => log::error!(
+                                        "Failed to re-inject on port {}: {}",
+                                        new_port,
+                                        e
+                                    ),
                                 }
                             }
                         }

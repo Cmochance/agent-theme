@@ -55,9 +55,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        working-directory: web
         run: npm install
 
       - name: Build bundle
-        working-directory: web
-        run: npx esbuild app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser
+        run: npm run build
