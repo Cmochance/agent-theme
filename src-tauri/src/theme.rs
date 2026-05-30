@@ -22,6 +22,8 @@ pub struct Theme {
     pub background: String,
     pub preview: String,
     #[serde(default)]
+    pub preview_data_uri: String,
+    #[serde(default)]
     pub dir: PathBuf,
 }
 
@@ -65,6 +67,9 @@ pub fn get_themes(app: &AppHandle) -> Vec<Theme> {
                                 if let Ok(mut meta) = serde_json::from_str::<Theme>(&raw) {
                                     meta.is_custom = false;
                                     meta.dir = entry.path();
+                                    meta.preview_data_uri =
+                                        encode_image_data_uri(&meta.dir.join(&meta.preview))
+                                            .unwrap_or_default();
                                     themes.push(meta);
                                 }
                             }
@@ -87,6 +92,8 @@ pub fn get_themes(app: &AppHandle) -> Vec<Theme> {
             is_custom: true,
             background: "bg.jpg".to_string(),
             preview: "preview.jpg".to_string(),
+            preview_data_uri: encode_image_data_uri(&custom_dir.join("preview.jpg"))
+                .unwrap_or_default(),
             dir: custom_dir,
         });
     }
@@ -151,17 +158,25 @@ pub fn generate_injection_script(theme: &Theme, kind: &AgentKind) -> Result<Stri
 /// Read theme background image and encode as a base64 data URI.
 fn encode_background(theme: &Theme) -> Result<String, String> {
     let bg_path = theme.dir.join(&theme.background);
-    let bg_bytes = fs::read(&bg_path)
-        .map_err(|e| format!("Failed to read background {:?}: {}", bg_path, e))?;
-    let bg_ext = if theme.background.ends_with(".png") {
+    encode_image_data_uri(&bg_path)
+}
+
+fn encode_image_data_uri(path: &PathBuf) -> Result<String, String> {
+    let image_bytes =
+        fs::read(path).map_err(|e| format!("Failed to read image {:?}: {}", path, e))?;
+    let image_ext = if path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("png"))
+    {
         "png"
     } else {
         "jpeg"
     };
     Ok(format!(
         "data:image/{};base64,{}",
-        bg_ext,
-        base64_engine.encode(&bg_bytes)
+        image_ext,
+        base64_engine.encode(&image_bytes)
     ))
 }
 

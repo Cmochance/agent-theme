@@ -1,7 +1,7 @@
 use crate::config::AgentKind;
 use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 use sysinfo::System;
 use tokio::time::sleep;
@@ -15,20 +15,6 @@ pub fn get_agent_data_dir(kind: &AgentKind) -> PathBuf {
 
 pub fn get_devtools_port_file(kind: &AgentKind) -> PathBuf {
     get_agent_data_dir(kind).join("DevToolsActivePort")
-}
-
-pub fn clean_locks(kind: &AgentKind) {
-    log::info!("Cleaning {:?} locks...", kind);
-    let dir = get_agent_data_dir(kind);
-    let files = [
-        "SingletonLock",
-        "SingletonCookie",
-        "SingletonSocket",
-        "DevToolsActivePort",
-    ];
-    for f in files {
-        let _ = fs::remove_file(dir.join(f));
-    }
 }
 
 pub fn is_agent_process_running(kind: &AgentKind) -> bool {
@@ -53,23 +39,16 @@ pub fn is_agent_process_running(kind: &AgentKind) -> bool {
     false
 }
 
-pub fn force_kill_agent(kind: &AgentKind) {
-    log::info!("Force killing {:?} processes...", kind);
-    for pattern in kind.pkill_patterns() {
-        let _ = Command::new("pkill")
-            .arg("-9")
-            .arg("-f")
-            .arg(pattern)
-            .status();
-    }
-
-    // Wait brief moment
-    for _ in 0..10 {
-        if !is_agent_process_running(kind) {
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
+fn is_agent_bundle_process_running(kind: &AgentKind) -> bool {
+    let mut sys = System::new_all();
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    let bundle_path = kind.app_bundle_path();
+    sys.processes().values().any(|process| {
+        process
+            .exe()
+            .map(|e| e.to_string_lossy().contains(bundle_path))
+            .unwrap_or(false)
+    })
 }
 
 pub fn read_port_from_file(kind: &AgentKind) -> Option<u16> {
@@ -89,66 +68,122 @@ pub fn read_port_from_file(kind: &AgentKind) -> Option<u16> {
     None
 }
 
-pub async fn launch_agent(kind: &AgentKind, force_clean: bool) -> Result<u16, String> {
-    if force_clean {
-        force_kill_agent(kind);
-        clean_locks(kind);
-    } else if is_agent_process_running(kind) {
-        if let Some(active_port) = read_port_from_file(kind) {
-            // Test if responsive via the browser WebSocket endpoint
-            let version_url = format!("http://127.0.0.1:{}/json/version", active_port);
-            if reqwest::get(&version_url).await.is_ok() {
-                log::info!(
-                    "{:?} is already running and listening on port {}",
-                    kind,
-                    active_port
-                );
-                return Ok(active_port);
-            }
-            // Also try /json/list (works for both Codex and Antigravity)
-            let list_url = format!("http://127.0.0.1:{}/json/list", active_port);
-            if reqwest::get(&list_url).await.is_ok() {
-                log::info!(
-                    "{:?} is already running and listening on port {}",
-                    kind,
-                    active_port
-                );
-                return Ok(active_port);
-            }
-        }
-        log::info!(
-            "{:?} process found but debug port is unresponsive. Restarting...",
-            kind
-        );
-        force_kill_agent(kind);
-        clean_locks(kind);
-    } else {
-        clean_locks(kind);
+pub async fn is_debug_port_responsive(port: u16) -> bool {
+    let Ok(client) = reqwest::Client::builder().no_proxy().build() else {
+        return false;
+    };
+
+    let version_url = format!("http://127.0.0.1:{}/json/version", port);
+    if client
+        .get(&version_url)
+        .send()
+        .await
+        .map(|r| r.status().is_success())
+        .unwrap_or(false)
+    {
+        return true;
     }
 
-    let binary = kind.binary_path();
-    log::info!("Starting {:?} at {:?}...", kind, binary);
-    let mut child = Command::new(&binary)
-        .arg("--remote-debugging-port=0")
-        .arg("--remote-allow-origins=*")
-        .spawn()
-        .map_err(|e| format!("Failed to start {:?}: {}", kind, e))?;
+    let list_url = format!("http://127.0.0.1:{}/json/list", port);
+    client
+        .get(&list_url)
+        .send()
+        .await
+        .map(|r| r.status().is_success())
+        .unwrap_or(false)
+}
 
-    // Polling for DevTools port
-    for _ in 1..=30 {
-        if let Some(port) = read_port_from_file(kind) {
-            let url = format!("http://127.0.0.1:{}/json/list", port);
-            if reqwest::get(&url).await.is_ok() {
-                log::info!("{:?} bound to port {}", kind, port);
-                return Ok(port);
-            }
+pub async fn discover_debug_port(kind: &AgentKind) -> Option<u16> {
+    let port = read_port_from_file(kind)?;
+    if is_debug_port_responsive(port).await {
+        Some(port)
+    } else {
+        None
+    }
+}
+
+async fn wait_until_bundle_processes_exit(kind: &AgentKind) -> bool {
+    for _ in 0..20 {
+        if !is_agent_bundle_process_running(kind) {
+            return true;
+        }
+        sleep(Duration::from_millis(250)).await;
+    }
+    false
+}
+
+async fn stop_agent_bundle_processes(kind: &AgentKind) -> Result<(), String> {
+    if !is_agent_bundle_process_running(kind) {
+        return Ok(());
+    }
+
+    let pattern = kind.app_bundle_path();
+    let status = Command::new("/usr/bin/pkill")
+        .args(["-TERM", "-f", pattern])
+        .status()
+        .map_err(|e| format!("Failed to stop {}: {}", kind, e))?;
+
+    if !status.success() {
+        log::warn!("pkill -TERM returned {:?} for {}", status.code(), kind);
+    }
+
+    if wait_until_bundle_processes_exit(kind).await {
+        return Ok(());
+    }
+
+    let status = Command::new("/usr/bin/pkill")
+        .args(["-KILL", "-f", pattern])
+        .status()
+        .map_err(|e| format!("Failed to force stop {}: {}", kind, e))?;
+
+    if !status.success() {
+        return Err(format!("Failed to force stop {}", kind));
+    }
+
+    if wait_until_bundle_processes_exit(kind).await {
+        Ok(())
+    } else {
+        Err(format!("{} did not exit after restart request", kind))
+    }
+}
+
+pub async fn restart_agent_with_debug_port(kind: &AgentKind) -> Result<u16, String> {
+    let app_path = PathBuf::from(kind.app_bundle_path());
+    if !app_path.exists() {
+        return Err(format!("{} app was not found at {:?}", kind, app_path));
+    }
+    let executable_path = PathBuf::from(kind.executable_path());
+    if !executable_path.exists() {
+        return Err(format!(
+            "{} executable was not found at {:?}",
+            kind, executable_path
+        ));
+    }
+
+    stop_agent_bundle_processes(kind).await?;
+
+    let child = Command::new(&executable_path)
+        .args(["--remote-debugging-port=0", "--remote-allow-origins=*"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| format!("Failed to start {}: {}", kind, e))?;
+    log::info!(
+        "Started {} with local debug-port arguments, pid {}",
+        kind,
+        child.id()
+    );
+
+    for _ in 0..60 {
+        if let Some(port) = discover_debug_port(kind).await {
+            return Ok(port);
         }
         sleep(Duration::from_millis(500)).await;
     }
 
-    let _ = child.kill();
     Err(format!(
-        "Timeout waiting for {:?} DevToolsActivePort to become available",
+        "Timed out waiting for {} to expose a local debug port",
         kind
     ))
 }

@@ -41,7 +41,7 @@ Agent Theme is a standalone desktop application (Tauri v2) that works alongside 
 - 🎨 **5 Built-in Themes:** Changli, Nailin, Zani, Azur Lane, Carton — switch with one click
 - 🖼️ **Custom Themes:** Drag-and-drop image upload, crop, and save as custom themes
 - 🔄 **Multi-Agent Support:** Works with both Codex Desktop and Antigravity, freely switchable
-- 🚀 **Auto Launch:** Companion can auto-start the target agent and apply the current theme
+- 🚀 **Scoped Restart:** Companion can restart the selected Codex or Antigravity app with a local debug port
 - 🔌 **CDP Injection:** Themes are injected via Chrome DevTools Protocol — safe, reversible, no source modification
 - 📊 **Live Status:** Real-time display of agent process status and CDP port binding
 - 💾 **Persistent Config:** All settings saved to `~/.codex/agent-theme/config.json`, survives restarts
@@ -74,17 +74,15 @@ Agent Theme is a standalone desktop application (Tauri v2) that works alongside 
 ### Basic Usage
 
 1. **Select Agent:** Choose Codex or Antigravity from the top switch bar
-2. **Launch Agent:** Click the "Start Agent" button (or enable "Auto Launch" to auto-start on companion launch)
+2. **Prepare Debug Port:** If the UI shows `No debug port`, click `Restart App`; the companion will restart the selected agent with local debug-port arguments
 3. **Pick a Theme:** Click any theme card in the grid to preview and apply
 4. **Toggle Switch:** The "Theme" toggle controls whether styles are injected; turn off to restore the agent's original appearance
 
-### Applying Themes to a Non-Debug Agent
+### Local Debug Port Requirement
 
-If the agent is already running without a CDP port, Agent Theme cannot inject themes. Solution:
+If the agent is already running without a CDP port, Agent Theme cannot inject themes. Clicking `Restart App` stops the currently selected Codex or Antigravity process and starts it again with `--remote-debugging-port=0`.
 
-1. Close the agent process via Agent Theme
-2. Use Agent Theme's "Start Agent" button to relaunch (automatically adds `--remote-debugging-port`)
-3. The current theme will be auto-applied on launch
+Process management is scoped to the two supported agent apps. The companion does not clean lock files in the agent app data directory and does not modify the agent app bundle. Once the port is available, keep the "Theme" toggle enabled and click a theme card to inject it.
 
 ## Theme Management
 
@@ -187,7 +185,7 @@ GitHub Actions CI is configured with:
 
 ### Q: Theme injection doesn't take effect?
 
-Make sure the agent was launched by Agent Theme (not manually), so it carries the `--remote-debugging-port` flag. Check that the CDP port status in the UI shows "Bound".
+Check the CDP port status in the UI. If it shows `No debug port`, click `Restart App` to relaunch the selected agent in local remote-debugging mode. If a port is available but injection still fails, the UI shows the backend error message.
 
 ### Q: Theme doesn't update after switching?
 
@@ -195,7 +193,7 @@ Themes are injected via `Page.addScriptToEvaluateOnNewDocument`, which only take
 
 ### Q: Theme is lost after agent crash/restart?
 
-Yes, CDP-injected themes are lost on agent restart. Agent Theme will automatically re-inject on detecting agent launch — keep "Auto Launch" and "Theme" toggle enabled for automatic recovery.
+Yes, CDP-injected themes are lost on agent restart. Agent Theme will automatically re-inject after it detects a reachable local debug port — keep the "Theme" toggle enabled for automatic recovery.
 
 ### Q: Is Windows / Linux supported?
 

@@ -45,17 +45,18 @@ impl AgentKind {
         }
     }
 
-    /// Binary path inside the .app bundle
-    pub fn binary_path(&self) -> PathBuf {
-        let app_name = match self {
-            AgentKind::Codex => "Codex.app",
-            AgentKind::Antigravity => "Antigravity.app",
-        };
-        PathBuf::from("/Applications")
-            .join(app_name)
-            .join("Contents")
-            .join("MacOS")
-            .join(self.data_dir_name())
+    pub fn app_bundle_path(&self) -> &'static str {
+        match self {
+            AgentKind::Codex => "/Applications/Codex.app",
+            AgentKind::Antigravity => "/Applications/Antigravity.app",
+        }
+    }
+
+    pub fn executable_path(&self) -> &'static str {
+        match self {
+            AgentKind::Codex => "/Applications/Codex.app/Contents/MacOS/Codex",
+            AgentKind::Antigravity => "/Applications/Antigravity.app/Contents/MacOS/Antigravity",
+        }
     }
 
     /// Process name patterns for detection
@@ -71,18 +72,6 @@ impl AgentKind {
         match self {
             AgentKind::Codex => vec!["/Applications/Codex.app/"],
             AgentKind::Antigravity => vec!["/Applications/Antigravity.app/"],
-        }
-    }
-
-    /// pkill patterns for force kill
-    pub fn pkill_patterns(&self) -> Vec<&'static str> {
-        match self {
-            AgentKind::Codex => vec![
-                "/Applications/Codex\\.app/",
-                "SkyComputerUseClient",
-                "Codex Computer Use\\.app",
-            ],
-            AgentKind::Antigravity => vec!["/Applications/Antigravity\\.app/"],
         }
     }
 }
@@ -103,7 +92,7 @@ impl Default for AppConfig {
         Self {
             enabled: true,
             selected_theme_id: "carton".to_string(),
-            auto_launch_agent: true,
+            auto_launch_agent: false,
             active_identifier: None,
             selected_agent: AgentKind::default(),
         }

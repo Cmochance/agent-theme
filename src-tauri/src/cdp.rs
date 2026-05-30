@@ -21,9 +21,17 @@ pub struct Target {
 
 pub async fn list_targets(port: u16) -> Result<Vec<Target>, String> {
     let url = format!("http://127.0.0.1:{}/json/list", port);
-    let response = reqwest::get(&url)
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .map_err(|e| format!("HTTP client error listTargets: {}", e))?;
+    let response = client
+        .get(&url)
+        .send()
         .await
-        .map_err(|e| format!("HTTP error listTargets: {}", e))?;
+        .map_err(|e| format!("HTTP error listTargets: {}", e))?
+        .error_for_status()
+        .map_err(|e| format!("HTTP status error listTargets: {}", e))?;
 
     let targets: Vec<Target> = response
         .json()
@@ -48,11 +56,10 @@ pub fn find_main_target<'a>(targets: &'a [Target], kind: &AgentKind) -> Option<&
                 .find(|t| t.target_type == "page" && t.title == "Codex")
         }
         AgentKind::Antigravity => {
-            if let Some(main) = targets.iter().find(|t| {
-                t.url.starts_with("https://127.0.0.1:")
-                    && t.target_type == "page"
-                    && t.title == "Antigravity"
-            }) {
+            if let Some(main) = targets
+                .iter()
+                .find(|t| t.url.starts_with("https://127.0.0.1:") && t.target_type == "page")
+            {
                 return Some(main);
             }
             targets
@@ -191,6 +198,43 @@ pub async fn clear_theme(
 
     let _ = ws_stream.close(None).await;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{find_main_target, Target};
+    use crate::config::AgentKind;
+
+    fn page(title: &str, url: &str) -> Target {
+        Target {
+            id: title.to_string(),
+            title: title.to_string(),
+            target_type: "page".to_string(),
+            url: url.to_string(),
+            web_socket_debugger_url: Some("ws://127.0.0.1:1/devtools/page/test".to_string()),
+        }
+    }
+
+    #[test]
+    fn finds_antigravity_localhost_page_even_when_title_is_port() {
+        let targets = vec![page("127.0.0.1:64653", "https://127.0.0.1:64653/")];
+
+        let target = find_main_target(&targets, &AgentKind::Antigravity);
+
+        assert_eq!(
+            target.map(|t| t.url.as_str()),
+            Some("https://127.0.0.1:64653/")
+        );
+    }
+
+    #[test]
+    fn finds_codex_app_page() {
+        let targets = vec![page("Codex", "app://-/index.html")];
+
+        let target = find_main_target(&targets, &AgentKind::Codex);
+
+        assert_eq!(target.map(|t| t.url.as_str()), Some("app://-/index.html"));
+    }
 }
 
 pub async fn reload_page(port: u16, kind: &AgentKind) -> Result<(), String> {

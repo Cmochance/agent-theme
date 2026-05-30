@@ -5,7 +5,7 @@
 agent-theme 是一个独立的 Tauri v2 桌面应用，作为 Codex Desktop / Antigravity 的换肤伴侣。通过 Chrome DevTools Protocol (CDP) 向代理的 WebView 注入自定义 CSS，实现磨砂玻璃 + 角色背景的视觉主题效果。
 
 - 仓库: Cmochance/agent-theme
-- 技术栈: Rust (Tauri 2.11) + Vanilla JS (esbuild)
+- 技术栈: Rust (Tauri 2.11) + TypeScript + Svelte + Tailwind CSS (Vite)
 - 平台: macOS 首发
 - 许可证: MIT
 
@@ -31,11 +31,20 @@ agent-theme/
 │   │   ├── config.rs       # 配置读写 (AppConfig)
 │   │   └── theme.rs        # 主题发现、CSS 生成、自定义主题 CRUD
 │   └── Cargo.toml
-├── web/                    # 前端 (Vanilla JS + esbuild)
-│   ├── app.js              # 主逻辑 (状态轮询、主题切换、裁剪 UI)
-│   ├── index.html          # 页面结构
-│   ├── style.css           # 暗红金玻璃拟态设计系统
-│   └── dist/               # 构建产物 (bundle.js)
+├── index.html              # Vite 入口 HTML
+├── package.json             # 前端依赖 (Svelte, Tailwind, Vite)
+├── vite.config.ts           # Vite 构建配置
+├── src/                    # 前端源码 (TypeScript + Svelte)
+│   ├── main.ts             # Svelte 应用入口
+│   ├── App.svelte          # 根组件
+│   └── lib/
+│       ├── types.ts        # 类型定义
+│       ├── tauri-commands.ts # Tauri command 封装
+│       ├── stores.ts       # Svelte 状态管理
+│       ├── actions.ts      # 业务操作
+│       ├── polling.ts      # 定时轮询
+│       └── components/     # UI 组件
+├── web/                    # Vite 构建产物 (Tauri frontendDist)
 ├── themes/                 # 内置主题资源 (每套含 bg.jpg + preview.jpg + theme.json)
 │   ├── changli/            # 长离
 │   ├── nailin/             # 奈琳
@@ -51,7 +60,7 @@ agent-theme/
 ### 本地构建
 
 ```bash
-cd web && npm install && npm run build && cd ..
+npm install cd web && npm install && npm run build && cd ..cd web && npm install && npm run build && cd .. npm run build
 cargo tauri dev
 ```
 
@@ -59,7 +68,7 @@ cargo tauri dev
 
 CI (.github/workflows/ci.yml) 在 PR 和 push main 时运行：
 - Rust: cargo fmt --check、cargo clippy -- -D warnings、cargo check
-- 前端: esbuild 打包验证
+- 前端: npm install + npm run build (Vite)
 
 ### 提交与 PR
 

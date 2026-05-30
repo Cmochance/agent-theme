@@ -4,13 +4,15 @@
   "version": "0.1.0",
   "identifier": "com.agenttheme.companion",
   "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../web"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
-        "title": "Agent Theme Companion",
+        "title": "",
         "width": 800,
         "height": 600,
         "resizable": true,

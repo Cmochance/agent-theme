@@ -2,16 +2,21 @@
   "name": "agent-theme-companion",
   "version": "0.1.0",
   "description": "Frontend for Agent Theme Companion",
+  "type": "module",
   "scripts": {
-    "build": "esbuild web/app.js --bundle --format=iife --outfile=web/bundle.js --platform=browser",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/api": "^2.11.0",
-    "esbuild": "^0.28.0"
+    "svelte": "^5.56.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
   }
 }

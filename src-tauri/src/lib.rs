@@ -37,6 +37,19 @@ async fn inject_and_save(
     Ok(identifier)
 }
 
+async fn resolve_debug_port(state: &AppState, kind: &AgentKind) -> Option<u16> {
+    let stored_port = *state.cdp_port.lock().unwrap();
+    if let Some(port) = stored_port {
+        if agent::is_debug_port_responsive(port).await {
+            return Some(port);
+        }
+    }
+
+    let discovered_port = agent::discover_debug_port(kind).await;
+    *state.cdp_port.lock().unwrap() = discovered_port;
+    discovered_port
+}
+
 #[tauri::command]
 async fn get_config() -> Result<AppConfig, String> {
     Ok(load_config())
@@ -62,30 +75,29 @@ async fn set_selected_agent(
 }
 
 #[tauri::command]
-async fn set_auto_launch(enabled: bool) -> Result<AppConfig, String> {
-    Ok(update_config(|c| c.auto_launch_agent = enabled))
-}
-
-#[tauri::command]
 async fn get_agent_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let config = load_config();
     let kind = &config.selected_agent;
     let is_running = agent::is_agent_process_running(kind);
-    let port = *state.cdp_port.lock().unwrap();
+    let port = if is_running {
+        resolve_debug_port(&state, kind).await
+    } else {
+        *state.cdp_port.lock().unwrap() = None;
+        None
+    };
+
+    if port.is_none() {
+        let had_state_identifier = state.active_identifier.lock().unwrap().take().is_some();
+        if had_state_identifier || config.active_identifier.is_some() {
+            update_config(|c| c.active_identifier = None);
+        }
+    }
+
     Ok(serde_json::json!({
         "running": is_running,
         "cdpPort": port,
         "agent": kind.to_string().to_lowercase()
     }))
-}
-
-#[tauri::command]
-async fn restart_agent(state: State<'_, AppState>) -> Result<(), String> {
-    let config = load_config();
-    let kind = config.selected_agent;
-    let port = agent::launch_agent(&kind, true).await?;
-    *state.cdp_port.lock().unwrap() = Some(port);
-    Ok(())
 }
 
 #[tauri::command]
@@ -96,21 +108,34 @@ async fn apply_theme(
 ) -> Result<(), String> {
     let config = load_config();
     let kind = config.selected_agent;
+    let port = resolve_debug_port(&state, &kind).await.ok_or_else(|| {
+        format!(
+            "{} is not exposing a local debug port. Start it with remote debugging enabled first.",
+            kind
+        )
+    })?;
 
-    // Read port once, release lock before any async work
-    let need_launch = {
-        let p = state.cdp_port.lock().unwrap();
-        p.is_none() || !agent::is_agent_process_running(&kind)
-    };
+    inject_and_save(&app, &state, port, &kind, &theme_id).await?;
 
-    if need_launch && load_config().auto_launch_agent {
-        let new_port = agent::launch_agent(&kind, false).await?;
-        *state.cdp_port.lock().unwrap() = Some(new_port);
-    }
+    Ok(())
+}
 
-    let port = *state.cdp_port.lock().unwrap();
-    if let Some(p) = port {
-        inject_and_save(&app, &state, p, &kind, &theme_id).await?;
+#[tauri::command]
+async fn restart_agent(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let config = load_config();
+    let kind = config.selected_agent;
+    let theme_id = config.selected_theme_id.clone();
+    let should_inject = config.enabled;
+
+    *state.cdp_port.lock().unwrap() = None;
+    *state.active_identifier.lock().unwrap() = None;
+    update_config(|c| c.active_identifier = None);
+
+    let port = agent::restart_agent_with_debug_port(&kind).await?;
+    *state.cdp_port.lock().unwrap() = Some(port);
+
+    if should_inject {
+        inject_and_save(&app, &state, port, &kind, &theme_id).await?;
     }
 
     Ok(())
@@ -120,25 +145,22 @@ async fn apply_theme(
 async fn clear_theme(state: State<'_, AppState>) -> Result<(), String> {
     let config = load_config();
     let kind = config.selected_agent;
-    let port = *state.cdp_port.lock().unwrap();
 
-    if let Some(p) = port {
-        if agent::is_agent_process_running(&kind) {
-            let ident = state
-                .active_identifier
-                .lock()
-                .unwrap()
-                .clone()
-                .or(config.active_identifier);
-            cdp::clear_theme(p, &kind, ident.as_deref()).await?;
-
-            update_config(|c| {
-                c.enabled = false;
-                c.active_identifier = None;
-            });
-            *state.active_identifier.lock().unwrap() = None;
-        }
+    if let Some(port) = resolve_debug_port(&state, &kind).await {
+        let ident = state
+            .active_identifier
+            .lock()
+            .unwrap()
+            .clone()
+            .or(config.active_identifier);
+        cdp::clear_theme(port, &kind, ident.as_deref()).await?;
     }
+
+    update_config(|c| {
+        c.enabled = false;
+        c.active_identifier = None;
+    });
+    *state.active_identifier.lock().unwrap() = None;
 
     Ok(())
 }
@@ -182,47 +204,16 @@ pub fn run() {
             get_config,
             set_enabled,
             set_selected_agent,
-            set_auto_launch,
             get_agent_status,
-            restart_agent,
             apply_theme,
+            restart_agent,
             clear_theme,
             get_all_themes,
             upload_custom_theme,
             delete_custom_theme_cmd,
         ])
         .setup(|app| {
-            // Check auto launch
-            let config = load_config();
-            let kind = config.selected_agent;
-            let app_handle = app.handle().clone();
-
-            tauri::async_runtime::spawn(async move {
-                if config.auto_launch_agent {
-                    log::info!("Auto-launch enabled, checking {:?}...", kind);
-                    if let Ok(port) = agent::launch_agent(&kind, false).await {
-                        let state: State<'_, AppState> = app_handle.state();
-                        *state.cdp_port.lock().unwrap() = Some(port);
-
-                        if config.enabled {
-                            log::info!("Auto-applying theme {}", config.selected_theme_id);
-                            if let Some(theme) = get_theme(&app_handle, &config.selected_theme_id) {
-                                if let Ok(script) = generate_injection_script(&theme, &kind) {
-                                    if let Ok(ident) = cdp::inject_theme(port, &kind, &script).await
-                                    {
-                                        update_config(|c| {
-                                            c.active_identifier = Some(ident.clone());
-                                        });
-                                        *state.active_identifier.lock().unwrap() = Some(ident);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Background monitor: detect agent restart and re-inject theme
+            // Background monitor: discover existing debug ports and re-inject theme.
             let monitor_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 loop {
@@ -232,48 +223,54 @@ pub fn run() {
                     let kind = config.selected_agent;
                     let state: State<'_, AppState> = monitor_handle.state();
 
-                    if !agent::is_agent_process_running(&kind) {
-                        let old_port = *state.cdp_port.lock().unwrap();
-                        if old_port.is_some() {
-                            log::info!("{:?} process stopped, clearing CDP state", kind);
-                            *state.cdp_port.lock().unwrap() = None;
-                            *state.active_identifier.lock().unwrap() = None;
-                        }
-                        continue;
-                    }
-
-                    let current_port = agent::read_port_from_file(&kind);
+                    let current_port = agent::discover_debug_port(&kind).await;
                     let stored_port = *state.cdp_port.lock().unwrap();
 
                     if let Some(new_port) = current_port {
-                        if Some(new_port) != stored_port {
+                        let port_changed = Some(new_port) != stored_port;
+                        let missing_state_identifier =
+                            state.active_identifier.lock().unwrap().is_none();
+                        let missing_config_identifier = config.active_identifier.is_none();
+                        let should_inject = config.enabled
+                            && (port_changed
+                                || missing_state_identifier
+                                || missing_config_identifier);
+
+                        if port_changed {
                             log::info!(
-                                "{:?} port changed from {:?} to {}, re-injecting theme",
+                                "{:?} port changed from {:?} to {}",
                                 kind,
                                 stored_port,
                                 new_port
                             );
                             *state.cdp_port.lock().unwrap() = Some(new_port);
+                        }
 
-                            if config.enabled {
-                                let theme_id = &config.selected_theme_id;
-                                match inject_and_save(
-                                    &monitor_handle,
-                                    &state,
-                                    new_port,
-                                    &kind,
-                                    theme_id,
-                                )
-                                .await
-                                {
-                                    Ok(_) => log::info!("Re-injected theme after agent restart"),
-                                    Err(e) => log::error!(
-                                        "Failed to re-inject on port {}: {}",
-                                        new_port,
-                                        e
-                                    ),
+                        if should_inject {
+                            let theme_id = &config.selected_theme_id;
+                            match inject_and_save(
+                                &monitor_handle,
+                                &state,
+                                new_port,
+                                &kind,
+                                theme_id,
+                            )
+                            .await
+                            {
+                                Ok(_) => log::info!("Injected theme on debug port {}", new_port),
+                                Err(e) => {
+                                    log::error!("Failed to re-inject on port {}: {}", new_port, e)
                                 }
                             }
+                        }
+                    } else if stored_port.is_some() || config.active_identifier.is_some() {
+                        if stored_port.is_some() {
+                            log::info!("{:?} debug port is no longer available", kind);
+                        }
+                        *state.cdp_port.lock().unwrap() = None;
+                        *state.active_identifier.lock().unwrap() = None;
+                        if config.active_identifier.is_some() {
+                            update_config(|c| c.active_identifier = None);
                         }
                     }
                 }
