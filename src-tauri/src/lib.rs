@@ -215,6 +215,69 @@ pub fn run() {
                 }
             });
 
+            // Background monitor: detect agent restart and re-inject theme
+            let monitor_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+                    let config = load_config();
+                    let kind = config.selected_agent;
+                    let state: State<'_, AppState> = monitor_handle.state();
+
+                    if !agent::is_agent_process_running(&kind) {
+                        let old_port = *state.cdp_port.lock().unwrap();
+                        if old_port.is_some() {
+                            log::info!("{:?} process stopped, clearing CDP state", kind);
+                            *state.cdp_port.lock().unwrap() = None;
+                            *state.active_identifier.lock().unwrap() = None;
+                        }
+                        continue;
+                    }
+
+                    let current_port = agent::read_port_from_file(&kind);
+                    let stored_port = *state.cdp_port.lock().unwrap();
+
+                    if let Some(new_port) = current_port {
+                        if Some(new_port) != stored_port {
+                            log::info!(
+                                "{:?} port changed from {:?} to {}, re-injecting theme",
+                                kind,
+                                stored_port,
+                                new_port
+                            );
+                            *state.cdp_port.lock().unwrap() = Some(new_port);
+
+                            if config.enabled {
+                                if let Some(theme) =
+                                    get_theme(&monitor_handle, &config.selected_theme_id)
+                                {
+                                    if let Ok(script) = generate_injection_script(&theme, &kind) {
+                                        match cdp::inject_theme(new_port, &kind, &script).await {
+                                            Ok(ident) => {
+                                                log::info!("Re-injected theme after agent restart");
+                                                update_config(|c| {
+                                                    c.active_identifier = Some(ident.clone());
+                                                });
+                                                *state.active_identifier.lock().unwrap() =
+                                                    Some(ident);
+                                            }
+                                            Err(e) => {
+                                                log::error!(
+                                                    "Failed to re-inject theme on port {}: {}",
+                                                    new_port,
+                                                    e
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
             Ok(())
         })
         .run(tauri::generate_context!())
