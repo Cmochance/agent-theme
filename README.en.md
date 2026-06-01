@@ -21,6 +21,15 @@
 
 Agent Theme is a standalone desktop app (Tauri v2). The agent (Codex Desktop / Antigravity) is launched with `--remote-debugging-port` to expose a CDP port; this app connects over WebSocket and uses `Page.addScriptToEvaluateOnNewDocument` to inject a script before the page loads — adding a background layer, overriding the agent UI's design tokens, and applying `backdrop-filter` frosted glass to each panel. The whole theme lives only at runtime: turn off the toggle or restart the agent and it disappears, **without modifying the agent's binary or any config file**.
 
+## Supported Apps
+
+| Agent | Status | How it's reskinned |
+|---|---|---|
+| **Codex Desktop** | ✅ Supported | overrides Tailwind v4 `--color-token-*` design tokens + per-module frosted glass |
+| **Antigravity** | ✅ Supported | overrides shadcn / `--vscode-*` semantic tokens + per-panel frosted glass + chat-prose / code-block recolouring |
+
+> Both are injected at the CDP runtime and share `theme.json`'s colour knobs; support for more agents will be added over time.
+
 ## Theme Showcase
 
 Every theme is **colour-matched individually** to its own background — glass tinted from the image's dark tones, accent taken from the character's signature colour, and the legibility scrim calibrated per-wallpaper by brightness — so chat text stays readable on any image instead of hiding behind a uniform dark overlay. Below is the actual look on Antigravity (sidebar & input text blurred for privacy):

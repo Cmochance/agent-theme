@@ -21,6 +21,15 @@
 
 Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / Antigravity)启动时附带 `--remote-debugging-port` 暴露 CDP 端口，本应用通过 WebSocket 连上去，用 `Page.addScriptToEvaluateOnNewDocument` 在页面加载前注入一段脚本：插入背景图层 + 覆盖代理 UI 的设计令牌(design tokens)+ 给各面板加 `backdrop-filter` 磨砂玻璃。整套主题只活在运行时，关掉开关或代理重启即自然消失，**不动代理的 binary、不改任何配置文件**。
 
+## 已适配应用
+
+| 代理 | 状态 | 换肤方式 |
+|---|---|---|
+| **Codex Desktop** | ✅ 已适配 | 覆盖 Tailwind v4 `--color-token-*` 设计令牌 + 各模块磨砂玻璃 |
+| **Antigravity** | ✅ 已适配 | 覆盖 shadcn / `--vscode-*` 语义令牌 + 各面板磨砂玻璃 + 对话正文 / 代码块重配色 |
+
+> 两者都通过 CDP 运行时注入、共用 `theme.json` 的配色旋钮;后续适配更多代理会陆续加入。
+
 ## 主题展示
 
 每套主题都按自己的背景图**单独调色**——玻璃从画面暗部取色、强调色取角色的标志色、可读性 scrim 按壁纸亮度逐张校准，让聊天文字在任意壁纸上都清晰，而不是套一个统一的暗色蒙版。下面是 Antigravity 上的实际效果(侧栏与输入框文字已做模糊处理):
