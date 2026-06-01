@@ -1,10 +1,11 @@
 name: release
 
-# 多平台自动打包 pipeline:
-#   macos-14 (Apple Silicon arm64 原生) + macos-15-intel (Intel x64 原生) + windows-latest
+# 自动打包 pipeline(第一版:macOS .app + .dmg,arm64 + Intel)。
+#   macos-14 (Apple Silicon arm64 原生) + macos-15-intel (Intel x64 原生)
 # 触发: push tag v*  或  workflow_dispatch(手动填 version)
-# 产物: cargo tauri build 直出 .dmg / nsis .exe, macOS 额外 productbuild 出 .pkg,
-#       每个产物附 .sha256, 收口到一个 draft GitHub release 让你手动确认转正式。
+# 产物: cargo tauri build 直出 .dmg, 每个附 .sha256, 收口到一个 draft GitHub
+#       release 让你手动确认转正式。
+# (.pkg / Windows .exe 暂未启用, 后续需要时再加。)
 #
 # === 签名(重点,避免"打包出来不可用")===
 # macOS: 默认 ad-hoc 签名(APPLE_SIGNING_IDENTITY="-")。完全未签的 .app 在 macOS
@@ -14,8 +15,6 @@ name: release
 #     APPLE_CERTIFICATE / APPLE_CERTIFICATE_PASSWORD     Developer ID Application .p12 (base64) + 密码
 #     APPLE_SIGNING_IDENTITY                             形如 "Developer ID Application: Name (TEAMID)"
 #     APPLE_API_KEY_BASE64 / APPLE_API_KEY / APPLE_API_ISSUER   App Store Connect API key(.p8 base64)+ Key ID + Issuer ID(公证用)
-# Windows: NSIS .exe 未做 Authenticode 签名(SmartScreen 会提示未知发布者,可正常安装),
-#   随包发 .sha256 供校验完整性。
 #
 # 注意: macOS 不能"先 build app + 手动 codesign + 再 build dmg"——第二次 build 会重新
 #   bundle .app 覆盖签名。必须让 Tauri 在同一次 build 内完成签名链(本 workflow 即如此)。
@@ -49,9 +48,6 @@ jobs:
           - os: macos-15-intel
             target: x86_64-apple-darwin
             plat: macOS-x64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            plat: Windows-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -69,14 +65,11 @@ jobs:
           workspaces: 'src-tauri -> target'
           key: ${{ matrix.target }}
 
-      # windows-latest 冷编译 tauri-cli 需 15-25 min, 给独立 cache + 25 min timeout。
       - name: Cache cargo-tauri binary
         id: cache-tauri-cli
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/bin/cargo-tauri
-            ~/.cargo/bin/cargo-tauri.exe
+          path: ~/.cargo/bin/cargo-tauri
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-tauri-cli-v1
 
       - name: Install tauri-cli
@@ -99,8 +92,8 @@ jobs:
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "Resolved VERSION=$V"
 
-      # 版本一致性: tag/输入的版本必须等于 tauri.conf.json 的 version,
-      # 否则产物名和 binary 内部版本会对不上, 早 fail。
+      # 版本一致性: tag/输入的版本必须等于 tauri.conf.json 的 version, 否则产物名
+      # 和 binary 内部版本会对不上, 早 fail。
       - name: Verify version matches tauri.conf.json
         shell: bash
         run: |
@@ -113,7 +106,7 @@ jobs:
 
       # macOS: ad-hoc 默认, 有 Developer ID secret 则导入证书 + 公证。
       - name: Import macOS signing cert (optional)
-        if: startsWith(matrix.os, 'macos-') && env.CERT != ''
+        if: env.CERT != ''
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
@@ -122,7 +115,7 @@ jobs:
           CERT: ${{ secrets.APPLE_CERTIFICATE }}
 
       - name: Write Apple notary API key (optional)
-        if: startsWith(matrix.os, 'macos-') && env.KEY_B64 != ''
+        if: env.KEY_B64 != ''
         shell: bash
         env:
           KEY_B64: ${{ secrets.APPLE_API_KEY_BASE64 }}
@@ -132,7 +125,7 @@ jobs:
           echo "$KEY_B64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
           echo "APPLE_API_KEY_PATH=$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8" >> "$GITHUB_ENV"
 
-      - name: cargo tauri build
+      - name: cargo tauri build (app + dmg)
         shell: bash
         env:
           APPLE_SIGNING_IDENTITY_RAW: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -144,33 +137,14 @@ jobs:
           [[ -n "${APPLE_SIGNING_IDENTITY_RAW:-}" ]] && export APPLE_SIGNING_IDENTITY="$APPLE_SIGNING_IDENTITY_RAW"
           [[ -n "${APPLE_API_ISSUER_RAW:-}" ]] && export APPLE_API_ISSUER="$APPLE_API_ISSUER_RAW"
           [[ -n "${APPLE_API_KEY_RAW:-}" ]] && export APPLE_API_KEY="$APPLE_API_KEY_RAW"
-
-          if [[ "${{ matrix.os }}" == macos-* ]]; then
-            if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
-              # 无 Developer ID → ad-hoc, 让 Tauri 在 build 内 codesign --sign -。
-              export APPLE_SIGNING_IDENTITY="-"
-              echo "::notice::macOS 无 Developer ID secret, 使用 ad-hoc 签名(-)"
-            fi
-            cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg
-          else
-            cargo tauri build --target "${{ matrix.target }}" --bundles nsis
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            # 无 Developer ID → ad-hoc, 让 Tauri 在 build 内 codesign --sign -。
+            export APPLE_SIGNING_IDENTITY="-"
+            echo "::notice::macOS 无 Developer ID secret, 使用 ad-hoc 签名(-)"
           fi
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg
 
-      # macOS: 从 ad-hoc 签好的 .app 用 productbuild 生成 .pkg 安装器。
-      # .pkg 本身未签(同 .dmg, 双击需右键打开), 但装进 /Applications 的 .app 是 ad-hoc 签的可运行。
-      - name: Build macOS .pkg
-        if: startsWith(matrix.os, 'macos-')
-        shell: bash
-        run: |
-          set -euo pipefail
-          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/agent_theme_companion.app"
-          PKG="src-tauri/target/${{ matrix.target }}/release/bundle/macos/agent_theme_companion_${{ steps.ver.outputs.version }}.pkg"
-          if [[ ! -d "$APP" ]]; then echo "::error::.app 不存在: $APP"; exit 1; fi
-          productbuild --component "$APP" /Applications "$PKG"
-          echo "Built pkg: $PKG"
-
-      - name: Verify macOS bundles (codesign / hdiutil / pkg)
-        if: startsWith(matrix.os, 'macos-')
+      - name: Verify macOS bundles (codesign / hdiutil)
         shell: bash
         run: |
           set -euo pipefail
@@ -180,29 +154,12 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP"
           echo "::endgroup::"
           echo "::group::hdiutil verify dmg"
-          for d in "$BDIR"/dmg/*.dmg; do [[ -f "$d" ]] && hdiutil verify "$d"; done
-          echo "::endgroup::"
-          echo "::group::pkg payload sanity"
-          for p in "$BDIR"/macos/*.pkg; do
-            [[ -f "$p" ]] || continue
-            sz=$(wc -c < "$p"); (( sz > 1048576 )) || { echo "::error::.pkg 太小($sz)疑似坏包: $p"; exit 1; }
-            pkgutil --payload-files "$p" | grep -q "agent_theme_companion.app" || { echo "::error::.pkg 缺 .app payload: $p"; exit 1; }
-            echo "OK pkg: $p ($sz bytes)"
+          for d in "$BDIR"/dmg/*.dmg; do
+            [[ -f "$d" ]] || continue
+            hdiutil verify "$d"
+            sz=$(wc -c < "$d"); (( sz > 1048576 )) || { echo "::error::.dmg 太小($sz)疑似坏包: $d"; exit 1; }
           done
           echo "::endgroup::"
-
-      - name: Verify Windows .exe integrity
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          set -euo pipefail
-          NSIS_DIR="src-tauri/target/${{ matrix.target }}/release/bundle/nsis"
-          for f in "$NSIS_DIR"/*-setup.exe; do
-            [[ -f "$f" ]] || continue
-            file "$f" | grep -qE "PE32\+? executable" || { echo "::error::非 PE32/PE32+ 可执行: $f"; exit 1; }
-            sz=$(wc -c < "$f"); (( sz > 1048576 )) || { echo "::error::Setup.exe 太小($sz)疑似坏包: $f"; exit 1; }
-            echo "OK exe: $f ($sz bytes)"
-          done
 
       - name: Stage + rename + sha256
         shell: bash
@@ -212,21 +169,9 @@ jobs:
           BDIR="src-tauri/target/${{ matrix.target }}/release/bundle"
           mkdir -p staging
           shopt -s nullglob
-          case "$PLAT" in
-            macOS-*)
-              for f in "$BDIR"/dmg/*.dmg;  do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}.dmg"; done
-              for f in "$BDIR"/macos/*.pkg; do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}.pkg"; done
-              ;;
-            Windows-x64)
-              for f in "$BDIR"/nsis/*-setup.exe; do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}-Setup.exe"; done
-              ;;
-          esac
-          # sha256 旁车
+          for f in "$BDIR"/dmg/*.dmg; do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}.dmg"; done
           cd staging
-          for f in *; do
-            if command -v shasum >/dev/null; then shasum -a 256 "$f" > "$f.sha256";
-            else sha256sum "$f" > "$f.sha256"; fi
-          done
+          for f in *; do shasum -a 256 "$f" > "$f.sha256"; done
           echo "Staged for $PLAT:"; ls -la
           files=(*)
           if (( ${#files[@]} == 0 )); then

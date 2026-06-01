@@ -55,23 +55,20 @@ Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / An
 
 ## 下载与安装
 
-从 [Releases](https://github.com/Cmochance/agent-theme/releases) 下载对应平台的资产(每个包附 `.sha256` 校验文件):
+从 [Releases](https://github.com/Cmochance/agent-theme/releases) 下载对应芯片的 `.dmg`(每个附 `.sha256` 校验文件):
 
 | 平台 | 资产 | 说明 |
 |---|---|---|
-| macOS · Apple Silicon | `Agent-Theme-v<版本>-macOS-arm64.dmg` / `.pkg` | M 系列芯片 |
-| macOS · Intel | `Agent-Theme-v<版本>-macOS-x64.dmg` / `.pkg` | Intel x64 |
-| Windows | `Agent-Theme-v<版本>-Windows-x64-Setup.exe` | NSIS 安装器 |
+| macOS · Apple Silicon | `Agent-Theme-v<版本>-macOS-arm64.dmg` | M 系列芯片 |
+| macOS · Intel | `Agent-Theme-v<版本>-macOS-x64.dmg` | Intel x64 |
 
-`.dmg` 拖入「应用程序」即可;`.pkg` 双击走安装向导。
+下载后把 `.dmg` 里的 App 拖入「应用程序」即可。
 
 ### macOS 首次打开(重要)
 
-当前未做 Apple 公证,App 用 **ad-hoc 签名**(已避免「已损坏、无法打开」),但首次打开会被 Gatekeeper 提示「来自身份不明的开发者」——**右键 App(或 .pkg)→ 打开** 一次性放行即可,或到 `系统设置 → 隐私与安全性` 点「仍要打开」。下载完可用 `shasum -a 256 -c <文件>.sha256` 校验完整性。
+当前未做 Apple 公证,App 用 **ad-hoc 签名**(已避免「已损坏、无法打开」),但首次打开会被 Gatekeeper 提示「来自身份不明的开发者」——**右键 App → 打开** 一次性放行即可,或到 `系统设置 → 隐私与安全性` 点「仍要打开」。下载完可用 `shasum -a 256 -c <文件>.sha256` 校验完整性。
 
-> Windows 未做 Authenticode 签名,SmartScreen 可能提示未知发布者,点「更多信息 → 仍要运行」即可;可用 `.sha256` 校验。
-
-> **运行平台**:App 逻辑当前**仅 macOS 可用**(`agent.rs` 的进程检测与路径依赖 `~/Library/Application Support/`)。Windows 安装包能正常安装运行,但暂时检测不到 Codex / Antigravity,跨平台适配在计划中。
+> **运行平台**:当前**仅支持 macOS**(`agent.rs` 的进程检测与路径依赖 `~/Library/Application Support/`)。Windows / Linux 适配在计划中。
 
 ## 快速开始
 

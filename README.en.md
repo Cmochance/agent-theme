@@ -55,23 +55,20 @@ Every theme is **colour-matched individually** to its own background — glass t
 
 ## Download & Install
 
-Grab the asset for your platform from [Releases](https://github.com/Cmochance/agent-theme/releases) (each ships a `.sha256` checksum):
+Grab the `.dmg` for your chip from [Releases](https://github.com/Cmochance/agent-theme/releases) (each ships a `.sha256` checksum):
 
 | Platform | Asset | Notes |
 |---|---|---|
-| macOS · Apple Silicon | `Agent-Theme-v<ver>-macOS-arm64.dmg` / `.pkg` | M-series |
-| macOS · Intel | `Agent-Theme-v<ver>-macOS-x64.dmg` / `.pkg` | Intel x64 |
-| Windows | `Agent-Theme-v<ver>-Windows-x64-Setup.exe` | NSIS installer |
+| macOS · Apple Silicon | `Agent-Theme-v<ver>-macOS-arm64.dmg` | M-series |
+| macOS · Intel | `Agent-Theme-v<ver>-macOS-x64.dmg` | Intel x64 |
 
-`.dmg` → drag into Applications; `.pkg` → double-click for the installer wizard.
+Open the `.dmg` and drag the app into Applications.
 
 ### macOS first launch (important)
 
-Not Apple-notarized yet, so the app uses **ad-hoc signing** (which avoids the "is damaged / can't be opened" error), but Gatekeeper will warn "unidentified developer" on first launch — **right-click the app (or .pkg) → Open** once to allow it, or go to `System Settings → Privacy & Security` and click "Open Anyway". Verify the download with `shasum -a 256 -c <file>.sha256`.
+Not Apple-notarized yet, so the app uses **ad-hoc signing** (which avoids the "is damaged / can't be opened" error), but Gatekeeper will warn "unidentified developer" on first launch — **right-click the app → Open** once to allow it, or go to `System Settings → Privacy & Security` and click "Open Anyway". Verify the download with `shasum -a 256 -c <file>.sha256`.
 
-> Windows has no Authenticode signature, so SmartScreen may warn about an unknown publisher — click "More info → Run anyway"; verify with `.sha256`.
-
-> **Runtime platform**: the app logic is **macOS-only** for now (`agent.rs` process detection & paths depend on `~/Library/Application Support/`). The Windows installer installs & runs fine but won't detect Codex / Antigravity yet; cross-platform support is planned.
+> **Runtime platform**: **macOS only** for now (`agent.rs` process detection & paths depend on `~/Library/Application Support/`). Windows / Linux support is planned.
 
 ## Quick Start
 
