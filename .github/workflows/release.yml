@@ -80,12 +80,16 @@ jobs:
       - name: Install frontend deps
         run: npm install
 
+      # 通过 env 传入(不把 ${{ }} 直接插进 shell, 防脚本注入 CWE-78):
+      # workflow_dispatch 的 version 是用户输入, 经 env 后 shell 只当普通字符串。
       - name: Resolve VERSION
         id: ver
         shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            V="${{ github.event.inputs.version }}"
+          if [[ -n "$INPUT_VERSION" ]]; then
+            V="$INPUT_VERSION"
           else
             V="${GITHUB_REF_NAME#v}"
           fi
@@ -96,10 +100,12 @@ jobs:
       # 和 binary 内部版本会对不上, 早 fail。
       - name: Verify version matches tauri.conf.json
         shell: bash
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
           CONF_V=$(node -p "require('./src-tauri/tauri.conf.json').version")
-          if [[ "$CONF_V" != "${{ steps.ver.outputs.version }}" ]]; then
-            echo "::error::tag/输入版本 '${{ steps.ver.outputs.version }}' != tauri.conf.json version '$CONF_V'。请先把 src-tauri/tauri.conf.json 的 version 改成一致再发 tag。"
+          if [[ "$CONF_V" != "$VERSION" ]]; then
+            echo "::error::tag/输入版本 '$VERSION' != tauri.conf.json version '$CONF_V'。请先把 src-tauri/tauri.conf.json 的 version 改成一致再发 tag。"
             exit 1
           fi
           echo "version OK: $CONF_V"
@@ -163,10 +169,14 @@ jobs:
 
       - name: Stage + rename + sha256
         shell: bash
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          PLAT: ${{ matrix.plat }}
+          TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          V="${{ steps.ver.outputs.version }}"; PLAT="${{ matrix.plat }}"
-          BDIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          V="$VERSION"
+          BDIR="src-tauri/target/$TARGET/release/bundle"
           mkdir -p staging
           shopt -s nullglob
           for f in "$BDIR"/dmg/*.dmg; do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}.dmg"; done
@@ -196,9 +206,11 @@ jobs:
       - name: Resolve VERSION
         id: ver
         shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            V="${{ github.event.inputs.version }}"
+          if [[ -n "$INPUT_VERSION" ]]; then
+            V="$INPUT_VERSION"
           else
             V="${GITHUB_REF_NAME#v}"
           fi
