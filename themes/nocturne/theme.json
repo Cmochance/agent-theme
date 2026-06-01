@@ -23,9 +23,9 @@
     "blur": "6px",
     "hover": "rgba(205,221,228,0.10)",
     "selection": "rgba(124,197,214,0.16)",
-    "scrimTop": "rgba(13,17,21,0.26)",
-    "scrimMid": "rgba(13,17,21,0.34)",
-    "scrimBot": "rgba(13,17,21,0.60)",
+    "scrimTop": "rgba(11,14,20,0.48)",
+    "scrimMid": "rgba(10,13,18,0.56)",
+    "scrimBot": "rgba(8,11,16,0.68)",
     "baseColor": "#0d1115"
   }
 }

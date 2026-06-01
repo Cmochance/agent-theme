@@ -1,109 +1,88 @@
 # Agent Theme
 
 > [!NOTE]
-> 🎨 **Agent Theme** is a standalone theme companion app for Codex Desktop / Antigravity.
-> It injects custom CSS into the agent's WebView via Chrome DevTools Protocol, creating frosted-glass + character background visual themes.
-> Comes with 5 built-in themes, supports custom upload & crop — one-click theming without modifying agent source code.
+> 🎨 **Agent Theme** is a standalone theming companion for **Codex Desktop / Antigravity**.
+> It injects CSS into the agent's WebView at runtime via the Chrome DevTools Protocol to render a "character wallpaper + frosted-glass panels" look — **without touching the agent's source, fully reversible**.
+> Ships **11** built-in anime themes, each colour-matched to its own background image, plus custom upload & crop. One click to reskin.
 
 <p align="center">
   <a href="README.md">简体中文</a> |
-  <a href="README.en.md">English</a>
+  <a href="README.en.md">English</a> |
+  <a href="https://github.com/Cmochance/agent-theme/releases">Releases</a>
 </p>
 
 <p align="center">
   <a href="https://github.com/Cmochance/agent-theme/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Cmochance/agent-theme?style=social"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Cmochance/agent-theme"></a>
   <a href="https://www.rust-lang.org/"><img alt="Rust" src="https://img.shields.io/badge/Rust-1.77%2B-orange?logo=rust"></a>
-  <a href="https://v2.tauri.app/"><img alt="Tauri" src="https://img.shields.io/badge/Tauri-2.0-FFC131?logo=tauri"></a>
+  <a href="https://v2.tauri.app/"><img alt="Tauri" src="https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri"></a>
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/macOS-000000?logo=apple"></a>
 </p>
 
-## Table of Contents
+Agent Theme is a standalone desktop app (Tauri v2). The agent (Codex Desktop / Antigravity) is launched with `--remote-debugging-port` to expose a CDP port; this app connects over WebSocket and uses `Page.addScriptToEvaluateOnNewDocument` to inject a script before the page loads — adding a background layer, overriding the agent UI's design tokens, and applying `backdrop-filter` frosted glass to each panel. The whole theme lives only at runtime: turn off the toggle or restart the agent and it disappears, **without modifying the agent's binary or any config file**.
 
-- [Overview](#overview)
-- [Features](#features)
-- [Built-in Themes](#built-in-themes)
-- [Quick Start](#quick-start)
-- [Theme Management](#theme-management)
-- [Architecture](#architecture)
-- [Development](#development)
-- [FAQ](#faq)
-- [License](#license)
+## Theme Showcase
 
-## Overview
+Every theme is **colour-matched individually** to its own background — glass tinted from the image's dark tones, accent taken from the character's signature colour, and the legibility scrim calibrated per-wallpaper by brightness — so chat text stays readable on any image instead of hiding behind a uniform dark overlay. Below is the actual look on Antigravity (sidebar & input text blurred for privacy):
 
-Agent Theme is a standalone desktop application (Tauri v2) that works alongside Codex Desktop or Antigravity. It dynamically injects CSS styles via Chrome DevTools Protocol (CDP) to personalize the agent's appearance without modifying any source code.
+| 长离 · Changli | 霜银 · Frost |
+|---|---|
+| ![Changli](docs/antigravity/changli.jpg) | ![Frost](docs/antigravity/frost.jpg) |
 
-**How it works:** The agent is launched with the `--remote-debugging-port` flag to expose a CDP port. Agent Theme connects to this port via WebSocket, uses `Page.addScriptToEvaluateOnNewDocument` to inject JavaScript that automatically inserts a background image and semi-transparent CSS overlay on every page load, achieving a frosted-glass visual effect.
+**11** built-in themes (backgrounds are the respective character artworks — see [Disclaimer](#disclaimer)):
+
+| ID | English | ID | English |
+|---|---|---|---|
+| `changli` | Changli | `nocturne` | Nocturne |
+| `azurlane` | Azur Lane | `duet` | Duet |
+| `sonata` | Sonata | `rose` | Rose |
+| `zani` | Zani | `studio` | Studio |
+| `nailin` | Nailin | `carton` | Carton |
+| `frost` | Frost | | |
+
+> The same theme applies to both **Codex Desktop** and **Antigravity** — the two agents share theme.json's colour knobs, each injecting platform-appropriate token overrides.
 
 ## Features
 
-- 🎨 **5 Built-in Themes:** Changli, Nailin, Zani, Azur Lane, Carton — switch with one click
-- 🖼️ **Custom Themes:** Drag-and-drop image upload, crop, and save as custom themes
-- 🔄 **Multi-Agent Support:** Works with both Codex Desktop and Antigravity, freely switchable
-- 🚀 **Scoped Restart:** Companion can restart the selected Codex or Antigravity app with a local debug port
-- 🔌 **CDP Injection:** Themes are injected via Chrome DevTools Protocol — safe, reversible, no source modification
-- 📊 **Live Status:** Real-time display of agent process status and CDP port binding
-- 💾 **Persistent Config:** All settings saved to `~/.codex/agent-theme/config.json`, survives restarts
-- 🔒 **Single Instance:** Prevents running multiple companion windows simultaneously
+- 🎨 **11 built-in themes** — each derives dark glass + accent + tiered text colours from its own background; one-click switch
+- 🖼️ **Custom themes** — drag-drop an image → 1:1 crop → save as a local theme
+- 🔄 **Dual-agent support** — works with both **Codex Desktop** and **Antigravity**, switchable from the top bar
+- 🚀 **Scoped restart** — restart the current agent with the debug-port flag attached; only the two supported agents are touched, nothing else
+- 🔌 **CDP runtime injection** — injected via Chrome DevTools Protocol, no source changes, clears back to the original look
+- 📊 **Live status** — shows agent run state and CDP port binding in real time
+- 💾 **Persistent config** — settings saved to `~/.codex/agent-theme/config.json`
+- 🔒 **Single-instance guard** — prevents conflicting companion windows
 
-## Built-in Themes
+## Install
 
-| Theme ID | Chinese | English | Preview |
-|----------|---------|---------|---------|
-| `changli` | 长离 | Changli | ![Changli](themes/changli/preview.jpg) |
-| `nailin` | 奈琳 | Nailin | ![Nailin](themes/nailin/preview.jpg) |
-| `zani` | 扎妮 | Zani | ![Zani](themes/zani/preview.jpg) |
-| `azurlane` | 碧蓝航线 | Azur Lane | ![Azur Lane](themes/azurlane/preview.jpg) |
-| `carton` | 纸箱 | Carton | ![Carton](themes/carton/preview.jpg) |
+1. Download the latest `.dmg` from [Releases](https://github.com/Cmochance/agent-theme/releases)
+2. Drag `Agent Theme Companion.app` into Applications
+3. If macOS Gatekeeper blocks it on first launch ("unidentified developer"): `right-click → Open` once, or go to `System Settings → Privacy & Security` and click "Open Anyway"
+4. Launch — the UI shows the agent's run state
+
+> **macOS only** for now (`agent.rs` process detection & paths depend on `~/Library/Application Support/`). Windows / Linux support is planned.
 
 ## Quick Start
 
-### Prerequisites
+1. **Pick an agent** — Codex or Antigravity from the top switcher
+2. **Get a debug port** — if the UI shows `No debug port`, click `Restart App`; the companion stops the current agent and relaunches it with `--remote-debugging-port=0`
+3. **Pick a theme** — click any card in the theme grid to preview & apply instantly
+4. **Toggle** — the "Theme" switch controls injection; turning it off restores the agent's original look
 
-- **macOS** (currently macOS-only; Windows/Linux support planned)
-- **Codex Desktop** or **Antigravity** installed
-
-### Installation
-
-1. Download the latest `.dmg` from [Releases](https://github.com/Cmochance/agent-theme/releases)
-2. Drag `Agent Theme Companion.app` into your Applications folder
-3. On first launch, macOS Gatekeeper may block: right-click the app → choose "Open"; or go to `System Settings → Privacy & Security` and click "Open Anyway"
-4. Launch Agent Theme Companion — the interface will display the agent's running status
-
-### Basic Usage
-
-1. **Select Agent:** Choose Codex or Antigravity from the top switch bar
-2. **Prepare Debug Port:** If the UI shows `No debug port`, click `Restart App`; the companion will restart the selected agent with local debug-port arguments
-3. **Pick a Theme:** Click any theme card in the grid to preview and apply
-4. **Toggle Switch:** The "Theme" toggle controls whether styles are injected; turn off to restore the agent's original appearance
-
-### Local Debug Port Requirement
-
-If the agent is already running without a CDP port, Agent Theme cannot inject themes. Clicking `Restart App` stops the currently selected Codex or Antigravity process and starts it again with `--remote-debugging-port=0`.
-
-Process management is scoped to the two supported agent apps. The companion does not clean lock files in the agent app data directory and does not modify the agent app bundle. Once the port is available, keep the "Theme" toggle enabled and click a theme card to inject it.
+> Themes are injected via `Page.addScriptToEvaluateOnNewDocument` and take effect **only on page navigation / refresh**. They are lost when the agent restarts; the app re-injects automatically once a port is available — just keep the toggle on.
 
 ## Theme Management
 
-### Using Built-in Themes
-
-Built-in themes are stored in the app's `themes/` resource directory. No additional configuration needed — select a theme and it takes effect immediately.
-
-### Creating Custom Themes
+### Create a custom theme
 
 1. Click the "+" card in the theme grid
-2. Drag an image into the upload area (JPG/PNG, max 20MB)
-3. Use the crop tool to adjust the background area
-4. Click "Save & Apply" — the theme is saved to `~/.codex/agent-theme/themes/`
+2. Drop an image (JPG/PNG, ≤ 20MB)
+3. Adjust the background region with the crop tool
+4. "Save & Apply" — the theme is written to `~/.codex/agent-theme/themes/`
 
-### Deleting Custom Themes
+### theme.json structure
 
-Hover over a custom theme card and click the delete button. Built-in themes cannot be deleted.
-
-### Theme File Structure
-
-```json
+```jsonc
 {
   "id": "changli",
   "displayName": { "zh": "长离 (Changli)", "en": "Changli" },
@@ -112,118 +91,115 @@ Hover over a custom theme card and click the delete button. Built-in themes cann
   "backgroundFit": "cover",
   "backgroundPosition": "50% 4%",
   "style": {
-    "ink": "#f4ebdf",
-    "accent": "#e08a55",
-    "glass": "rgba(30,21,14,.52)",
-    "glassStrong": "rgba(22,15,10,.72)",
-    "glassSoft": "rgba(26,18,12,.80)",
-    "blur": "26px",
-    "scrimTop": "rgba(18,12,8,.26)",
-    "scrimMid": "rgba(17,11,7,.34)",
-    "scrimBot": "rgba(11,7,5,.60)",
+    "ink": "#f4ebdf", "ink2": "rgba(244,235,223,.74)",
+    "ink3": "rgba(244,235,223,.56)", "ink4": "rgba(244,235,223,.40)",
+    "accent": "#e08a55", "accentSoft": "#e6b48a", "focus": "#ffce86",
+    "surface": "rgba(26,18,12,.50)",
+    "glass": "rgba(30,21,14,.60)", "glassSoft": "rgba(34,24,16,.52)", "glassStrong": "rgba(22,15,10,.78)",
+    "border": "rgba(255,228,201,.14)", "borderSoft": "rgba(255,228,201,.07)", "borderStrong": "rgba(255,228,201,.26)",
+    "blur": "6px", "hover": "rgba(255,236,210,.10)", "selection": "rgba(255,236,210,.16)",
+    "scrimTop": "rgba(18,12,8,.26)", "scrimMid": "rgba(17,11,7,.34)", "scrimBot": "rgba(11,7,5,.60)",
     "baseColor": "#160f0a"
   }
 }
 ```
 
-`background`/`backgroundFit`/`backgroundPosition` control the image itself; the optional `style` block drives the **modular Codex theme**:
+`background` / `backgroundFit` / `backgroundPosition` control the wallpaper itself; the optional `style` block is a set of agent-agnostic **colour knobs** (`--cl-*`) that the Codex and Antigravity injectors each translate into platform-specific token overrides:
 
-- **Token override** — for current Codex (Tailwind v4 + `--color-token-*` design tokens) the injection overrides semantic tokens rather than fixed container selectors, so it tracks app updates; main surfaces are made transparent to reveal the background image.
-- **Per-module frosted glass** — sidebar (`glass`), composer input (`glassSoft`), and dialogs/menus (`glassStrong`) each use a `backdrop-filter` at a distinct opacity + `blur`, sampling the same background image behind them, so **each module's background matches perfectly by construction**.
-- **Per-level text colours** — `ink`/`ink2`/`ink3`/`ink4` tune primary/secondary/tertiary/disabled text; `accent` unifies links, focus, and the send button into the character's signature colour.
-- **Readability scrim** — `scrimTop`/`scrimMid`/`scrimBot` define a top-to-bottom darkening gradient that keeps text legible over the art.
+- **Token overrides** — override the agent UI's semantic design tokens (not hard-coded container selectors), so they survive agent updates; the main surface is made transparent to reveal the wallpaper.
+- **Per-panel frosted glass** — sidebar / input / dialogs each use a different `glass*` opacity + `blur` as a `backdrop-filter` that **samples the same wallpaper behind the panel** in real time, so each panel matches the background perfectly.
+- **Tiered text colours** — `ink` / `ink2` / `ink3` / `ink4` map to body / secondary / tertiary / disabled; `accent` / `focus` unify links, focus, and the send button around the character's primary colour.
+- **Legibility scrim** — `scrimTop` / `scrimMid` / `scrimBot` define a top-to-bottom darkening gradient. **Bright wallpapers need a stronger scrim** (or the chat text washes out), so each theme is calibrated per-image by brightness.
 
-Omit `style` to fall back to neutral dark-glass defaults (works with any background image). The local, untracked `.theme-lab/` holds `build-assets.sh` (slices the source image into per-module crops at different sizes/opacities/masks) and `cdp.mjs` (the inject + screenshot tuning harness).
+Omit `style` to fall back to neutral dark-glass defaults (works on any background).
 
 ## Architecture
 
 ```
 agent-theme/
-├── src-tauri/          # Rust backend (Tauri v2)
-│   ├── src/
-│   │   ├── main.rs     # App entry point
-│   │   ├── lib.rs      # Tauri commands registration, lifecycle
-│   │   ├── agent.rs    # Agent process detection, launch, management
-│   │   ├── cdp.rs      # CDP WebSocket connection, theme inject/clear
-│   │   ├── config.rs   # Config read/write (AppConfig)
-│   │   └── theme.rs    # Theme discovery, CSS generation, custom theme CRUD
-│   └── Cargo.toml
-├── web/                # Frontend (Vanilla JS + esbuild)
-│   ├── app.js          # Main logic (status polling, theme switching, crop UI)
-│   ├── index.html      # Page structure
-│   ├── style.css       # Dark red-gold glassmorphism design system
-│   └── dist/           # Build output (bundle.js)
-└── themes/             # Built-in theme assets
-    ├── changli/        # Changli
-    ├── nailin/         # Nailin
-    ├── zani/           # Zani
-    ├── azurlane/       # Azur Lane
-    └── carton/         # Carton
+├── src-tauri/              # Rust backend (Tauri v2)
+│   └── src/
+│       ├── lib.rs          # Tauri commands, lifecycle, state
+│       ├── agent.rs        # agent detect / launch / restart-with-debug-port
+│       ├── cdp.rs          # CDP WebSocket, theme inject / clear
+│       ├── config.rs       # config read/write (AppConfig)
+│       └── theme.rs        # theme discovery, CSS generation, custom-theme CRUD
+├── src/                    # frontend source (TypeScript + Svelte)
+│   ├── App.svelte          # root component
+│   └── lib/                # types / tauri-commands / stores / actions / polling / components
+├── index.html              # Vite entry
+├── web/                    # Vite build output (Tauri frontendDist)
+└── themes/<id>/            # built-in theme assets (bg.jpg + preview.jpg + theme.json)
 ```
 
 **Core tech:**
 
-- **Backend:** Rust + Tauri 2.11.2, using `tokio-tungstenite` for CDP WebSocket, `sysinfo` for process detection, `reqwest` for HTTP probes
-- **Frontend:** Vanilla JavaScript + esbuild bundling, calling Tauri commands via `@tauri-apps/api`
-- **Injection mechanism:** Uses CDP `Page.addScriptToEvaluateOnNewDocument` to inject JavaScript before page load, dynamically creating `<style>` tags and DOM overlays for background image + frosted-glass effect; saves the `identifier` for later removal via `Page.removeScriptToEvaluateOnNewDocument`
+- **Backend** — Rust 1.77+ · Tauri 2.11 · `tokio-tungstenite` (CDP WebSocket) · `sysinfo` (process detection) · `reqwest` (port probing)
+- **Frontend** — TypeScript + Svelte + Tailwind CSS, built with Vite, calling Tauri commands via `@tauri-apps/api`
+- **Injection** — CDP `Page.addScriptToEvaluateOnNewDocument` injects a script before page load, creating a `<style>` + background layer; the `identifier` is saved so it can be cleared via `Page.removeScriptToEvaluateOnNewDocument`
 
 ## Development
-
-### Requirements
-
-- Rust 1.77.2+
-- Node.js 20+
-- macOS (currently macOS-only for full dev & debugging)
-
-### Local Build
 
 ```bash
 git clone https://github.com/Cmochance/agent-theme.git
 cd agent-theme
 
-cd web
 npm install
-npm run build
-cd ..
+npm run build          # Vite build the frontend into web/
 
 cargo install tauri-cli --version "^2"
-cargo tauri dev
+cargo tauri dev        # desktop window, hot-rebuild on frontend changes
 ```
 
-### CI Checks
+Checks:
 
-GitHub Actions CI is configured with:
-- **Rust Checks:** `cargo fmt --check`, `cargo clippy -D warnings`, `cargo check`
-- **Frontend Build:** esbuild bundle verification
+```bash
+npm run check                       # svelte-check
+cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test --lib
+```
 
-### Debugging Tips
+CI (`.github/workflows/ci.yml`) runs Rust (fmt / clippy / check) + the Vite frontend build on PRs and pushes to main.
 
-- The agent's CDP port is written to `~/Library/Application Support/<Agent>/DevToolsActivePort`
-- Browse `http://127.0.0.1:<port>/json/list` to see debuggable WebView targets
-- Rust logs output to the console via `tauri-plugin-log` — run `cargo tauri dev` in terminal to view
+Debugging tips:
+
+- The agent's CDP port is written to `~/Library/Application Support/<Agent>/DevToolsActivePort` (not a fixed port)
+- `http://127.0.0.1:<port>/json/list` lists debuggable WebView targets
+- Rust logs go through `tauri-plugin-log`; run `cargo tauri dev` in a terminal to see them
 
 ## FAQ
 
-### Q: Theme injection doesn't take effect?
+### Theme doesn't take effect after injection?
 
-Check the CDP port status in the UI. If it shows `No debug port`, click `Restart App` to relaunch the selected agent in local remote-debugging mode. If a port is available but injection still fails, the UI shows the backend error message.
+Check the CDP port status in the UI. If it shows `No debug port`, click `Restart App` to relaunch the agent in remote-debug mode; if the port is up but it still fails, the UI shows the backend error.
 
-### Q: Theme doesn't update after switching?
+### Agent UI didn't update after switching theme?
 
-Themes are injected via `Page.addScriptToEvaluateOnNewDocument`, which only takes effect on page **navigation or refresh**. Try switching tabs or refreshing the agent page after changing themes.
+Themes take effect on page **navigation / refresh**. After switching, switch the agent's tab or refresh the page.
 
-### Q: Theme is lost after agent crash/restart?
+### Theme lost after the agent restarts?
 
-Yes, CDP-injected themes are lost on agent restart. Agent Theme will automatically re-inject after it detects a reachable local debug port — keep the "Theme" toggle enabled for automatic recovery.
+CDP-injected themes are lost when the agent restarts. The app re-injects automatically once a debug port is available — just keep the "Theme" toggle on.
 
-### Q: Is Windows / Linux supported?
+### Does it modify the agent's source or config?
 
-Currently macOS only. The `agent.rs` module uses macOS-specific paths (`~/Library/Application Support/`) for process detection. Cross-platform support is planned.
+No. Injection is purely at the CDP runtime; no agent files are written. Clearing the injection restores the original look. Process management is scoped to the two supported agents only — it never touches their lock files or package contents.
 
-### Q: Does it modify the agent's source code or config files?
+### Antigravity's code syntax highlighting is still light?
 
-No. Theme injection is entirely runtime-based via CDP and does not modify any agent files. The agent returns to its original appearance after injection is cleared.
+The **rendered markdown code blocks** in chat are remapped to a dark syntax palette by the theme; but if you open Antigravity's embedded **Monaco code editor**, its syntax colours come from Antigravity's own colour theme — set Antigravity to a dark theme to match.
+
+## Disclaimer
+
+- This is an independent third-party theming tool, **not** an official OpenAI / Google project; it does not reuse their trademarks / logos / release identity. Codex / Antigravity are products of their respective owners.
+- Injection happens entirely at the CDP runtime, connecting only to the local `127.0.0.1` debug port — it does not take over the system proxy, upload anything, or modify agent files.
+- Built-in background images are artwork of the respective works / characters (e.g. *Wuthering Waves*, *Azur Lane*, etc.); copyright belongs to the original authors / publishers, and they are provided **for personal study and local appearance customisation only** — not for commercial use or redistribution. Open an issue if anything infringes and it will be removed promptly.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for full text.
+MIT License — see [LICENSE](LICENSE).
+
+## Activity
+
+<p align="center">
+  <a href="https://star-history.com/#Cmochance/agent-theme&Date"><img src="https://api.star-history.com/svg?repos=Cmochance/agent-theme&type=Date" alt="Star History" width="70%"></a>
+</p>
