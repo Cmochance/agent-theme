@@ -1,0 +1,216 @@
+name: release
+
+# 自动打包 pipeline(第一版:macOS .app + .dmg,arm64 + Intel)。
+#   macos-14 (Apple Silicon arm64 原生) + macos-15-intel (Intel x64 原生)
+# 触发: push tag v*  或  workflow_dispatch(手动填 version)
+# 产物: cargo tauri build 直出 .dmg, 每个附 .sha256, 收口到一个 draft GitHub
+#       release 让你手动确认转正式。
+# (.pkg / Windows .exe 暂未启用, 后续需要时再加。)
+#
+# === 签名(重点,避免"打包出来不可用")===
+# macOS: 默认 ad-hoc 签名(APPLE_SIGNING_IDENTITY="-")。完全未签的 .app 在 macOS
+#   Sequoia 15+ 会被 Gatekeeper 无条件拒绝(报"已损坏"、连"仍要打开"都没有);
+#   ad-hoc 签后用户可"右键 → 打开"绕过。这是免费的最低保障。
+#   若日后配齐下面 6 个可选 secrets,则自动升级为真签名 + 公证(双击即用、无警告):
+#     APPLE_CERTIFICATE / APPLE_CERTIFICATE_PASSWORD     Developer ID Application .p12 (base64) + 密码
+#     APPLE_SIGNING_IDENTITY                             形如 "Developer ID Application: Name (TEAMID)"
+#     APPLE_API_KEY_BASE64 / APPLE_API_KEY / APPLE_API_ISSUER   App Store Connect API key(.p8 base64)+ Key ID + Issuer ID(公证用)
+#
+# 注意: macOS 不能"先 build app + 手动 codesign + 再 build dmg"——第二次 build 会重新
+#   bundle .app 覆盖签名。必须让 Tauri 在同一次 build 内完成签名链(本 workflow 即如此)。
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '不带 v 前缀(如 0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: aarch64-apple-darwin
+            plat: macOS-arm64
+          # Intel Mac: macos-15-intel 是 GitHub 在 macos-13 退役后为 Intel x64 新设的
+          # runner 标签, 公开仓免费, 原生编译 x86_64-apple-darwin。
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            plat: macOS-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'src-tauri -> target'
+          key: ${{ matrix.target }}
+
+      - name: Cache cargo-tauri binary
+        id: cache-tauri-cli
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-tauri
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-tauri-cli-v1
+
+      - name: Install tauri-cli
+        if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
+        timeout-minutes: 25
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Install frontend deps
+        run: npm install
+
+      - name: Resolve VERSION
+        id: ver
+        shell: bash
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Resolved VERSION=$V"
+
+      # 版本一致性: tag/输入的版本必须等于 tauri.conf.json 的 version, 否则产物名
+      # 和 binary 内部版本会对不上, 早 fail。
+      - name: Verify version matches tauri.conf.json
+        shell: bash
+        run: |
+          CONF_V=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [[ "$CONF_V" != "${{ steps.ver.outputs.version }}" ]]; then
+            echo "::error::tag/输入版本 '${{ steps.ver.outputs.version }}' != tauri.conf.json version '$CONF_V'。请先把 src-tauri/tauri.conf.json 的 version 改成一致再发 tag。"
+            exit 1
+          fi
+          echo "version OK: $CONF_V"
+
+      # macOS: ad-hoc 默认, 有 Developer ID secret 则导入证书 + 公证。
+      - name: Import macOS signing cert (optional)
+        if: env.CERT != ''
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        env:
+          CERT: ${{ secrets.APPLE_CERTIFICATE }}
+
+      - name: Write Apple notary API key (optional)
+        if: env.KEY_B64 != ''
+        shell: bash
+        env:
+          KEY_B64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$KEY_B64" | base64 -d > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+          echo "APPLE_API_KEY_PATH=$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: cargo tauri build (app + dmg)
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY_RAW: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER_RAW: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_RAW: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          set -euo pipefail
+          # 未配置的 secret 在 env 里是空串, 显式判空再 export, 空时不暴露给 build。
+          [[ -n "${APPLE_SIGNING_IDENTITY_RAW:-}" ]] && export APPLE_SIGNING_IDENTITY="$APPLE_SIGNING_IDENTITY_RAW"
+          [[ -n "${APPLE_API_ISSUER_RAW:-}" ]] && export APPLE_API_ISSUER="$APPLE_API_ISSUER_RAW"
+          [[ -n "${APPLE_API_KEY_RAW:-}" ]] && export APPLE_API_KEY="$APPLE_API_KEY_RAW"
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            # 无 Developer ID → ad-hoc, 让 Tauri 在 build 内 codesign --sign -。
+            export APPLE_SIGNING_IDENTITY="-"
+            echo "::notice::macOS 无 Developer ID secret, 使用 ad-hoc 签名(-)"
+          fi
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg
+
+      - name: Verify macOS bundles (codesign / hdiutil)
+        shell: bash
+        run: |
+          set -euo pipefail
+          BDIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          APP="$BDIR/macos/agent_theme_companion.app"
+          echo "::group::codesign --verify .app (深度严格)"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "::endgroup::"
+          echo "::group::hdiutil verify dmg"
+          for d in "$BDIR"/dmg/*.dmg; do
+            [[ -f "$d" ]] || continue
+            hdiutil verify "$d"
+            sz=$(wc -c < "$d"); (( sz > 1048576 )) || { echo "::error::.dmg 太小($sz)疑似坏包: $d"; exit 1; }
+          done
+          echo "::endgroup::"
+
+      - name: Stage + rename + sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"; PLAT="${{ matrix.plat }}"
+          BDIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          mkdir -p staging
+          shopt -s nullglob
+          for f in "$BDIR"/dmg/*.dmg; do cp "$f" "staging/Agent-Theme-v${V}-${PLAT}.dmg"; done
+          cd staging
+          for f in *; do shasum -a 256 "$f" > "$f.sha256"; done
+          echo "Staged for $PLAT:"; ls -la
+          files=(*)
+          if (( ${#files[@]} == 0 )); then
+            echo "::error::没有产物 staged($PLAT)"; find "../$BDIR" -maxdepth 3 -type f | sed -n '1,80p'; exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.plat }}
+          path: staging/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Resolve VERSION
+        id: ver
+        shell: bash
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: List artifacts
+        run: ls -la dist/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: 'dist/*'
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: v${{ steps.ver.outputs.version }}
+          draft: true
+          generate_release_notes: true

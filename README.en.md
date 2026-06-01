@@ -21,6 +21,15 @@
 
 Agent Theme is a standalone desktop app (Tauri v2). The agent (Codex Desktop / Antigravity) is launched with `--remote-debugging-port` to expose a CDP port; this app connects over WebSocket and uses `Page.addScriptToEvaluateOnNewDocument` to inject a script before the page loads — adding a background layer, overriding the agent UI's design tokens, and applying `backdrop-filter` frosted glass to each panel. The whole theme lives only at runtime: turn off the toggle or restart the agent and it disappears, **without modifying the agent's binary or any config file**.
 
+## Supported Apps
+
+| Agent | Status | How it's reskinned |
+|---|---|---|
+| **Codex Desktop** | ✅ Supported | overrides Tailwind v4 `--color-token-*` design tokens + per-module frosted glass |
+| **Antigravity** | ✅ Supported | overrides shadcn / `--vscode-*` semantic tokens + per-panel frosted glass + chat-prose / code-block recolouring |
+
+> Both are injected at the CDP runtime and share `theme.json`'s colour knobs; support for more agents will be added over time.
+
 ## Theme Showcase
 
 Every theme is **colour-matched individually** to its own background — glass tinted from the image's dark tones, accent taken from the character's signature colour, and the legibility scrim calibrated per-wallpaper by brightness — so chat text stays readable on any image instead of hiding behind a uniform dark overlay. Below is the actual look on Antigravity (sidebar & input text blurred for privacy):
@@ -53,14 +62,22 @@ Every theme is **colour-matched individually** to its own background — glass t
 - 💾 **Persistent config** — settings saved to `~/.codex/agent-theme/config.json`
 - 🔒 **Single-instance guard** — prevents conflicting companion windows
 
-## Install
+## Download & Install
 
-1. Download the latest `.dmg` from [Releases](https://github.com/Cmochance/agent-theme/releases)
-2. Drag `Agent Theme Companion.app` into Applications
-3. If macOS Gatekeeper blocks it on first launch ("unidentified developer"): `right-click → Open` once, or go to `System Settings → Privacy & Security` and click "Open Anyway"
-4. Launch — the UI shows the agent's run state
+Grab the `.dmg` for your chip from [Releases](https://github.com/Cmochance/agent-theme/releases) (each ships a `.sha256` checksum):
 
-> **macOS only** for now (`agent.rs` process detection & paths depend on `~/Library/Application Support/`). Windows / Linux support is planned.
+| Platform | Asset | Notes |
+|---|---|---|
+| macOS · Apple Silicon | `Agent-Theme-v<ver>-macOS-arm64.dmg` | M-series |
+| macOS · Intel | `Agent-Theme-v<ver>-macOS-x64.dmg` | Intel x64 |
+
+Open the `.dmg` and drag the app into Applications.
+
+### macOS first launch (important)
+
+Not Apple-notarized yet, so the app uses **ad-hoc signing** (which avoids the "is damaged / can't be opened" error), but Gatekeeper will warn "unidentified developer" on first launch — **right-click the app → Open** once to allow it, or go to `System Settings → Privacy & Security` and click "Open Anyway". Verify the download with `shasum -a 256 -c <file>.sha256`.
+
+> **Runtime platform**: **macOS only** for now (`agent.rs` process detection & paths depend on `~/Library/Application Support/`). Windows / Linux support is planned.
 
 ## Quick Start
 

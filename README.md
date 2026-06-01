@@ -21,6 +21,15 @@
 
 Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / Antigravity)启动时附带 `--remote-debugging-port` 暴露 CDP 端口，本应用通过 WebSocket 连上去，用 `Page.addScriptToEvaluateOnNewDocument` 在页面加载前注入一段脚本：插入背景图层 + 覆盖代理 UI 的设计令牌(design tokens)+ 给各面板加 `backdrop-filter` 磨砂玻璃。整套主题只活在运行时，关掉开关或代理重启即自然消失，**不动代理的 binary、不改任何配置文件**。
 
+## 已适配应用
+
+| 代理 | 状态 | 换肤方式 |
+|---|---|---|
+| **Codex Desktop** | ✅ 已适配 | 覆盖 Tailwind v4 `--color-token-*` 设计令牌 + 各模块磨砂玻璃 |
+| **Antigravity** | ✅ 已适配 | 覆盖 shadcn / `--vscode-*` 语义令牌 + 各面板磨砂玻璃 + 对话正文 / 代码块重配色 |
+
+> 两者都通过 CDP 运行时注入、共用 `theme.json` 的配色旋钮;后续适配更多代理会陆续加入。
+
 ## 主题展示
 
 每套主题都按自己的背景图**单独调色**——玻璃从画面暗部取色、强调色取角色的标志色、可读性 scrim 按壁纸亮度逐张校准，让聊天文字在任意壁纸上都清晰，而不是套一个统一的暗色蒙版。下面是 Antigravity 上的实际效果(侧栏与输入框文字已做模糊处理):
@@ -53,14 +62,22 @@ Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / An
 - 💾 **配置持久化** —— 设置保存到 `~/.codex/agent-theme/config.json`，重启不丢失
 - 🔒 **单实例保护** —— 防止多个伴侣窗口同时运行导致冲突
 
-## 安装
+## 下载与安装
 
-1. 从 [Releases](https://github.com/Cmochance/agent-theme/releases) 下载最新 `.dmg`
-2. 将 `Agent Theme Companion.app` 拖入「应用程序」
-3. 首次打开若被 macOS Gatekeeper 拦截(「来自身份不明的开发者」):`右键 App → 打开` 一次性放行，或到 `系统设置 → 隐私与安全性` 点「仍要打开」
-4. 启动后界面即显示代理运行状态
+从 [Releases](https://github.com/Cmochance/agent-theme/releases) 下载对应芯片的 `.dmg`(每个附 `.sha256` 校验文件):
 
-> 当前**仅支持 macOS**(`agent.rs` 的进程检测与路径逻辑依赖 `~/Library/Application Support/`)。Windows / Linux 适配在计划中。
+| 平台 | 资产 | 说明 |
+|---|---|---|
+| macOS · Apple Silicon | `Agent-Theme-v<版本>-macOS-arm64.dmg` | M 系列芯片 |
+| macOS · Intel | `Agent-Theme-v<版本>-macOS-x64.dmg` | Intel x64 |
+
+下载后把 `.dmg` 里的 App 拖入「应用程序」即可。
+
+### macOS 首次打开(重要)
+
+当前未做 Apple 公证,App 用 **ad-hoc 签名**(已避免「已损坏、无法打开」),但首次打开会被 Gatekeeper 提示「来自身份不明的开发者」——**右键 App → 打开** 一次性放行即可,或到 `系统设置 → 隐私与安全性` 点「仍要打开」。下载完可用 `shasum -a 256 -c <文件>.sha256` 校验完整性。
+
+> **运行平台**:当前**仅支持 macOS**(`agent.rs` 的进程检测与路径依赖 `~/Library/Application Support/`)。Windows / Linux 适配在计划中。
 
 ## 快速开始
 
