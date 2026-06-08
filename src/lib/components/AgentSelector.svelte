@@ -1,10 +1,16 @@
 <script lang="ts">
   import { configStore } from '../stores';
   import { switchAgent } from '../actions';
+  import type { AgentKind } from '../types';
 
-  const agents = ['codex', 'antigravity'] as const;
+  const agents: AgentKind[] = ['codex', 'antigravity', 'linear'];
+  const labels: Record<AgentKind, string> = {
+    codex: 'Codex',
+    antigravity: 'Antigravity',
+    linear: 'Linear',
+  };
 
-  function handleClick(agent: 'codex' | 'antigravity') {
+  function handleClick(agent: AgentKind) {
     switchAgent(agent);
   }
 </script>
@@ -23,7 +29,7 @@
           : 'text-[#1e293b] bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(230,238,250,0.85)_100%)] border-t-[rgba(255,255,255,0.95)] border-b-[rgba(180,200,230,0.35)] shadow-[0_1px_3px_rgba(30,41,59,0.12),0_-1px_0_rgba(255,255,255,0.8)_inset]'}"
       on:click={() => handleClick(agent)}
     >
-      {agent === 'codex' ? 'Codex' : 'Antigravity'}
+      {labels[agent]}
     </button>
   {/each}
 </div>

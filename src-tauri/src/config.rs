@@ -11,6 +11,7 @@ pub enum AgentKind {
     #[default]
     Codex,
     Antigravity,
+    Linear,
 }
 
 impl fmt::Display for AgentKind {
@@ -18,6 +19,7 @@ impl fmt::Display for AgentKind {
         match self {
             AgentKind::Codex => write!(f, "Codex"),
             AgentKind::Antigravity => write!(f, "Antigravity"),
+            AgentKind::Linear => write!(f, "Linear"),
         }
     }
 }
@@ -27,6 +29,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => "Codex",
             AgentKind::Antigravity => "Antigravity",
+            AgentKind::Linear => "Linear",
         }
     }
 
@@ -34,6 +37,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => "Codex",
             AgentKind::Antigravity => "Antigravity",
+            AgentKind::Linear => "Linear",
         }
     }
 
@@ -42,6 +46,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => "Codex",
             AgentKind::Antigravity => "Antigravity",
+            AgentKind::Linear => "Linear",
         }
     }
 
@@ -49,6 +54,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => "/Applications/Codex.app",
             AgentKind::Antigravity => "/Applications/Antigravity.app",
+            AgentKind::Linear => "/Applications/Linear.app",
         }
     }
 
@@ -56,6 +62,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => "/Applications/Codex.app/Contents/MacOS/Codex",
             AgentKind::Antigravity => "/Applications/Antigravity.app/Contents/MacOS/Antigravity",
+            AgentKind::Linear => "/Applications/Linear.app/Contents/MacOS/Linear",
         }
     }
 
@@ -64,6 +71,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => vec!["Codex"],
             AgentKind::Antigravity => vec!["Antigravity"],
+            AgentKind::Linear => vec!["Linear"],
         }
     }
 
@@ -72,6 +80,7 @@ impl AgentKind {
         match self {
             AgentKind::Codex => vec!["/Applications/Codex.app/"],
             AgentKind::Antigravity => vec!["/Applications/Antigravity.app/"],
+            AgentKind::Linear => vec!["/Applications/Linear.app/"],
         }
     }
 }

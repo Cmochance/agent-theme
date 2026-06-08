@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AppConfig, Theme, AgentStatus } from './types';
+import type { AppConfig, Theme, AgentStatus, AgentKind } from './types';
 
 export async function getConfig(): Promise<AppConfig> {
   return invoke<AppConfig>('get_config');
@@ -9,7 +9,7 @@ export async function setEnabled(enabled: boolean): Promise<AppConfig> {
   return invoke<AppConfig>('set_enabled', { enabled });
 }
 
-export async function setSelectedAgent(agent: 'codex' | 'antigravity'): Promise<AppConfig> {
+export async function setSelectedAgent(agent: AgentKind): Promise<AppConfig> {
   return invoke<AppConfig>('set_selected_agent', { agent });
 }
 

@@ -6,6 +6,7 @@ import {
   isRestartingStore,
 } from './stores';
 import * as cmd from './tauri-commands';
+import type { AgentKind } from './types';
 
 function messageFromError(err: unknown) {
   if (typeof err === 'string') return err;
@@ -89,7 +90,7 @@ export async function setEnabled(enabled: boolean) {
   }
 }
 
-export async function switchAgent(agent: 'codex' | 'antigravity') {
+export async function switchAgent(agent: AgentKind) {
   lastErrorStore.set(null);
   try {
     const config = await cmd.setSelectedAgent(agent);

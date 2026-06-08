@@ -27,8 +27,12 @@ Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / An
 |---|---|---|
 | **Codex Desktop** | ✅ 已适配 | 覆盖 Tailwind v4 `--color-token-*` 设计令牌 + 各模块磨砂玻璃 |
 | **Antigravity** | ✅ 已适配 | 覆盖 shadcn / `--vscode-*` 语义令牌 + 各面板磨砂玻璃 + 对话正文 / 代码块重配色 |
+| **Linear** | ✅ 已适配 | 基于 Linear **暗色模式**叠壁纸 + 内容区透明化 + 侧栏/标签/卡片/菜单/弹窗磨砂玻璃 |
 
-> 两者都通过 CDP 运行时注入、共用 `theme.json` 的配色旋钮;后续适配更多代理会陆续加入。
+> 三者都通过 CDP 运行时注入、共用 `theme.json` 的配色旋钮;后续适配更多代理会陆续加入。
+
+> [!IMPORTANT]
+> **Linear 需先设为暗色模式**(Settings → Preferences → Interface theme → **Dark**)。Linear 的颜色由 StyleX 原子变量 + 旧 `--color-*` + 硬编码字面色三套系统驱动,浅色模式无法干净覆盖文字;暗色模式下 Linear 原生渲染暗底浅字,换肤只在其上叠壁纸与磨砂玻璃,清晰不闪。
 
 ## 主题展示
 
@@ -37,6 +41,10 @@ Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / An
 | 长离 · Changli | 霜银 · Frost |
 |---|---|
 | ![Changli](docs/antigravity/changli.jpg) | ![Frost](docs/antigravity/frost.jpg) |
+
+Linear 上的实际效果(暗色模式 + 长离 Changli，侧栏 / 标题 / 内容文字已做模糊处理):
+
+![Linear · Changli](docs/linear/changli.jpg)
 
 内置 **11 套**主题(背景图为各自角色美术，详见[免责声明](#免责声明)):
 

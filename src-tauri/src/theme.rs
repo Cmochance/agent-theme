@@ -190,6 +190,7 @@ pub fn generate_injection_script(theme: &Theme, kind: &AgentKind) -> Result<Stri
     match kind {
         AgentKind::Codex => generate_codex_injection_script(theme),
         AgentKind::Antigravity => generate_antigravity_injection_script(theme),
+        AgentKind::Linear => generate_linear_injection_script(theme),
     }
 }
 
@@ -855,6 +856,244 @@ fn generate_antigravity_injection_script(theme: &Theme) -> Result<String, String
     Ok(wrap_injection_css(&css, "Antigravity"))
 }
 
+/// Modular, design-token-driven theme for Linear (a thin Electron shell that loads the
+/// remote linear.app web app). Linear's colours run through THREE systems (StyleX atomic
+/// `--sx-*` / legacy `--color-*` / hardcoded literals on hashed classes), so light mode has
+/// no single override point (hardcoded dark TEXT stays dark, going invisible). Instead this
+/// rides Linear's OWN dark mode (every system renders dark surfaces + light text natively,
+/// fully readable) and only: paints a wallpaper, forces the opaque dark CONTENT surfaces
+/// transparent so it shows, frosts the sidebar, and re-skins ELEVATED chrome (tabs / cards /
+/// modals / menus / pills) to translucent glass. Text colour is never touched and there is NO
+/// JS scan (no flicker); surfaces we miss stay native-dark (graceful). REQUIRES Linear set to
+/// its Dark theme. The hashed `.sc-`/dynamic class list is Linear-BUILD-specific, re-capture
+/// via `.theme-lab/enum-views.mjs` on a Linear update. The `--cl-*` knobs are the SAME ones the
+/// Codex/Antigravity themes consume, so every theme is colour-matched across all three agents.
+/// Placeholders are filled from `ResolvedStyle`; structure tuned in
+/// `.theme-lab/linear.template.css` (kept in byte-for-byte parity with this constant).
+const LINEAR_CSS_TEMPLATE: &str = r#":root{
+--cl-ink:__INK__;--cl-ink-2:__INK2__;--cl-ink-3:__INK3__;--cl-ink-4:__INK4__;
+--cl-surface:__SURFACE__;--cl-glass:__GLASS__;--cl-glass-soft:__GLASS_SOFT__;--cl-glass-strong:__GLASS_STRONG__;
+--cl-border:__BORDER__;--cl-border-soft:__BORDER_SOFT__;--cl-border-strong:__BORDER_STRONG__;
+--cl-blur:__BLUR__;--cl-hover:__HOVER__;--cl-selection:__SELECTION__;
+--cl-scrim-top:__SCRIM_TOP__;--cl-scrim-mid:__SCRIM_MID__;--cl-scrim-bot:__SCRIM_BOT__;
+}
+/* Linear theme — DARK-MODE companion overlay. Linear's UI colours flow through THREE
+   systems (StyleX atomic --sx-* / legacy --color-* / hardcoded literals on hashed classes),
+   so there is no single CSS-variable layer to retheme light mode cleanly (text on hardcoded
+   classes stays dark → invisible). The robust path is to ride Linear's OWN dark mode (which
+   renders every system to dark surfaces + light text natively, fully readable) and only:
+   paint a wallpaper, make the opaque dark CONTENT surfaces translucent so it shows, and frost
+   the sidebar. We never touch text colour (native) and use NO JS scan (→ no flicker). Surfaces
+   we miss simply stay native-dark (readable) — graceful. REQUIRES Linear set to Dark theme. */
+html{
+color-scheme:dark !important;
+/* token-driven dark surfaces → transparent so the wallpaper shows through */
+--bg-color:transparent !important;
+--bg-base-color:transparent !important;
+--bg-base-color-dark:transparent !important;
+--color-bg-primary:transparent !important;
+--color-bg-secondary:var(--cl-glass-soft) !important;
+--color-bg-tertiary:var(--cl-glass) !important;
+}
+/* wallpaper as a fixed layer behind everything (z-index:-2, BELOW the veil). NOT
+   background-attachment:fixed (deadlocks Page.captureScreenshot under backdrop-filter). */
+html{background:__BASECOLOR__ !important;}
+html::before{
+content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
+background:url('__HERO__') __POS__ / __FIT__ no-repeat;
+}
+/* readability veil over the CONTENT region only (right of the sidebar), z-index:-1 so it
+   sits ON the wallpaper but behind the content. Top-weighted: the wallpaper's brightest
+   focal band sits up top where the first dense rows are, so the veil is strongest there and
+   eases down to let the art breathe lower. Sidebar keeps the un-veiled wallpaper (its own
+   glass samples it). Native light text reads cleanly on this. */
+html::after{
+content:'';position:fixed;top:0;left:var(--sidebar-width,244px);right:0;bottom:0;z-index:-1;pointer-events:none;
+background:linear-gradient(180deg,color-mix(in srgb,__BASECOLOR__ 72%,transparent) 0%,color-mix(in srgb,__BASECOLOR__ 44%,transparent) 30%,color-mix(in srgb,__BASECOLOR__ 30%,transparent) 100%);
+}
+body{background:transparent !important;}
+/* reveal the wallpaper: force the opaque dark CONTENT surfaces transparent. Stable hooks
+   (main / .section-to-print / [data-list-row] / #root / #mainLayoutContainer) cover the
+   common case across builds; the styled-component IDs (.sc-*) are matched with !important so
+   they win over the per-build dynamic class that carries the literal dark bg. The component
+   and dynamic class list is Linear-BUILD-specific — re-capture with .theme-lab/enum-views.mjs when
+   Linear updates. Anything missed just stays native-dark (still readable). */
+#root,#mainLayoutContainer,main,.section-to-print,[data-list-row="true"],
+.sc-kKSWRD,.sc-fItnus,.sc-ldkhJq,.sc-hxFzbA,.sc-kEhXBZ,.sc-fNRSbE,.sc-kVmzEn,.sc-kPIFkg,.sc-jwrgiv,.sc-eFMlzE,.sc-gvTVqI,.sc-iKQURa,
+.sc-fBLwsk,.sc-ZdPhu,.sc-iJPERB,.sc-edizWh,.sc-huLRYA,.sc-fCJyrc,.sc-fshlZV,.sc-jjSqrf,
+.kTaJMi,.eiIGLA,.sx-1lmytr0{background-color:transparent !important;background-image:none !important;}
+/* side panels → frosted glass with a scrim underlay so the docked columns stay legible
+   over whatever wallpaper bokeh sits behind them. Narrow, safe to blur. LEFT = the <nav>
+   workspace sidebar; RIGHT = the issue-detail properties panel (.sc-jCgzYM — build-specific,
+   re-capture via enum-views.mjs). */
+nav{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+border-right:1px solid var(--cl-border) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 3px)) saturate(118%);backdrop-filter:blur(calc(var(--cl-blur) + 3px)) saturate(118%);
+}
+.sc-jCgzYM,.sc-fcSRSc{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+border-left:1px solid var(--cl-border) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 3px)) saturate(118%);backdrop-filter:blur(calc(var(--cl-blur) + 3px)) saturate(118%);
+}
+/* the content text (native light) sits directly on the wallpaper+veil, not on a panel —
+   a shadow keeps it crisp over the busier lower wallpaper. Two-stop (tight dark core +
+   soft halo) so the DIM secondary text (issue ids / timestamps / counts, which dark mode
+   renders as low-contrast grey) stays legible over a bright wallpaper patch, without
+   touching the native text colour. */
+main,main *{text-shadow:0 1px 2px rgba(0,0,0,.7),0 0 4px rgba(0,0,0,.45);}
+main h1,main h2,main [class*="title" i]{text-shadow:0 1px 3px rgba(0,0,0,.68),0 0 2px rgba(0,0,0,.55);}
+/* input / textarea PLACEHOLDER text is a faint low-opacity grey that vanishes on the wallpaper
+   (e.g. "Description (optional)" on the New-view form). Lift it to a higher-contrast warm ink at
+   full opacity + a shadow so the prompt reads, while still sitting below real entered text. */
+::placeholder,::-webkit-input-placeholder,textarea::placeholder,input::placeholder{
+color:color-mix(in srgb,var(--cl-ink) 72%,transparent) !important;opacity:1 !important;text-shadow:0 1px 2px rgba(0,0,0,.55);}
+/* ── ELEVATED chrome → frosted glass mask (translucent dark + blur). The page background
+   shows the wallpaper, but discrete grouped/floating surfaces must stay readable: the top
+   tab strip, settings/section CARDS, modals, menus / popovers / dropdowns / tooltips, and
+   floating pills (Ask Linear / command bar). Native dark mode renders these opaque-dark; we
+   re-skin them to translucent frosted glass so text + borders read AND the wallpaper frosts
+   through. componentIds are build-specific (re-capture via enum-views.mjs); role / radix
+   hooks are stable. ── */
+.sc-gAeEkc,.sc-iVkNzS,
+[role="dialog"],[aria-modal="true"],[role="menu"],[role="listbox"],[role="tooltip"],
+[data-radix-popper-content-wrapper]>*,[cmdk-root],[cmdk-dialog]{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);
+border:1px solid var(--cl-border-soft) !important;
+}
+/* create-issue / command modals: the [role="dialog"] (sc-jOEaPZ) is a FULL-SCREEN wrapper, not
+   the card — so the elevated-glass rule above frosted the ENTIRE screen into a dark full-screen
+   mask. Override that wrapper to fully transparent (no mask), and instead frost the actual centered
+   CARD (sc-ceMZYT). Later rule + equal specificity → wins over [role=dialog]. Build-specific ids. */
+.sc-jOEaPZ{background:transparent !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;border:none !important;}
+.sc-ceMZYT{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);
+border:1px solid var(--cl-border-soft) !important;
+}
+/* the top tab strip (sc-fqmtlO) → FULLY transparent so the wallpaper flows all the way to the
+   top edge (user wants no dark top bar). Tab labels are native light + carry text-shadow. */
+.sc-fqmtlO{background:transparent !important;border:none !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;}
+/* hover-detail CARDS (status "Time in status" / sub-issues / labels / project & issue previews)
+   are one shared component whose surface is `.sx-1lmytr0` — the same base-surface StyleX class
+   we transparentise for in-flow content wrappers, so transparentising it stripped these cards'
+   background and left the text floating unreadably. They live inside a position:fixed floater
+   (`.sx-ixxii4`), so scope the glass to `.sx-ixxii4 .sx-1lmytr0`: re-skins ONLY the floating
+   cards (higher specificity than the transparentise rule → wins), while in-flow content wrappers
+   stay transparent (body carries no `.sx-ixxii4`). Cards mount fresh on hover → no repaint lag. */
+.sx-ixxii4 .sx-1lmytr0{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);
+}
+/* board/list issue CARDS were opaque black plates (sc-fjSLwO = an lch surface). Re-skin each
+   to the same translucent frosted glass as the rest of the chrome so a card reads as a glass
+   tile over the wallpaper rather than a solid block. Board cards are virtualised (few live at
+   once) so per-card blur is fine. Build-specific componentId — re-capture via cardpanel probe.
+   sc-bEnKrG is the actual opaque bar behind list GROUP HEADERS (In Review / In Progress / Todo);
+   sc-flFoxq is a related highlighted-row surface — same glass so neither stays an opaque black
+   bar. (These carry the visible bg; text-search hits inner wrappers, so they were found by
+   pixel-position elementFromPoint — re-capture that way on a Linear build change.) */
+.sc-fjSLwO,.sc-flFoxq,.sc-bEnKrG{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 2px)) saturate(118%);backdrop-filter:blur(calc(var(--cl-blur) + 2px)) saturate(118%);
+border:1px solid var(--cl-border-soft) !important;
+}
+/* modal/dialog dim BACKDROP (StyleX atomic `.sx-96pfka` = background var(--sx-1qdowq0), a
+   ~25% black scrim) — clear it so a frosted modal shows the WALLPAPER behind (like the
+   sidebar) instead of a flat dark plate. The content under it is already transparent, so
+   the modal's blur frosts the wallpaper+veil, not the page chrome. Build-specific atomic
+   class — re-capture via enum-rules.mjs / bdclass probe on a Linear update. */
+.sx-96pfka{background-color:transparent !important;}
+/* floating bottom-right pills (Ask Linear / AI assistant ⌘J) — small transparent buttons
+   over the wallpaper; give them a compact glass pill so the label reads. */
+.sc-fCUGvV{
+background:linear-gradient(var(--cl-scrim-bot),var(--cl-scrim-bot)),var(--cl-glass) !important;border:1px solid var(--cl-border-soft) !important;border-radius:8px !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);backdrop-filter:blur(calc(var(--cl-blur) + 4px)) saturate(120%);
+}
+__ACCENT_BLOCK__"#;
+
+/// Accent-cohesion block for Linear, emitted only when the theme declares
+/// `style.accent`. Remaps Linear's brand indigo (#6d78d5 focus ring /
+/// lch(53% 52.26 286.91) focus) plus link / selection / selected-row / active-tab /
+/// checkbox accents to the theme accent; on-accent text uses the theme's dark
+/// `base_color` for contrast. Omitted entirely for accent-less themes.
+const LINEAR_ACCENT_BLOCK: &str = r#":root{--cl-accent:__ACCENT__;--cl-accent-soft:__ACCENT_SOFT__;--cl-focus:__FOCUS__;}
+html{
+--focus-ring-color:var(--cl-focus) !important;
+--focus-color:var(--cl-focus) !important;
+--focus-ring-outline:1px solid var(--cl-focus) !important;
+}
+a,a:visited,[class*="link" i]{color:var(--cl-accent) !important;}
+::selection{background:color-mix(in srgb,var(--cl-accent) 32%,transparent);}
+/* row HOVER + selected/active states were opaque dark bars; re-skin to a warm accent-tinted
+   FROSTED GLASS (translucent + blur) so hovering/selecting a row reads as a frosted highlight
+   over the wallpaper, on-theme, never a solid plate. */
+[data-list-row="true"]:hover,[data-list-row="true"][data-selected="true"],[data-list-row="true"][data-active="true"],[data-list-row="true"][data-keyboard-active="true"]{
+background:linear-gradient(color-mix(in srgb,var(--cl-accent) 15%,transparent),color-mix(in srgb,var(--cl-accent) 15%,transparent)),var(--cl-glass-soft) !important;
+-webkit-backdrop-filter:blur(calc(var(--cl-blur) + 2px)) saturate(118%);backdrop-filter:blur(calc(var(--cl-blur) + 2px)) saturate(118%);
+box-shadow:inset 2px 0 0 var(--cl-accent) !important;
+}
+/* active view tab (Assigned/Created/...) + selected sidebar nav item: accent text. */
+[data-desktop-tab="true"][data-selected="true"],[aria-current="page"],[aria-selected="true"]{
+color:var(--cl-accent) !important;
+}
+[data-desktop-tab="true"][data-selected="true"]{box-shadow:inset 0 -2px 0 var(--cl-accent) !important;}
+/* checked checkboxes / radios / toggles → accent fill. */
+[role="checkbox"][aria-checked="true"],[data-state="checked"],input[type="checkbox"]:checked{
+background-color:var(--cl-accent) !important;border-color:var(--cl-accent) !important;color:__BASECOLOR__ !important;
+}
+/* primary action buttons (brand indigo by default) → accent. */
+button[type="submit"]:not([disabled]){background-color:var(--cl-accent) !important;color:__BASECOLOR__ !important;}"#;
+
+fn generate_linear_injection_script(theme: &Theme) -> Result<String, String> {
+    let bg = encode_background(theme)?;
+    let st = resolve_style(&theme.style);
+    let pos = theme
+        .background_position
+        .clone()
+        .unwrap_or_else(|| "center top".to_string());
+    let fit = theme
+        .background_fit
+        .clone()
+        .unwrap_or_else(|| "cover".to_string());
+
+    let accent_block = match &st.accent {
+        Some(a) => LINEAR_ACCENT_BLOCK
+            .replace("__ACCENT_SOFT__", &st.accent_soft)
+            .replace("__FOCUS__", &st.focus)
+            .replace("__BASECOLOR__", &st.base_color)
+            .replace("__ACCENT__", a),
+        None => String::new(),
+    };
+
+    let css = LINEAR_CSS_TEMPLATE
+        .replace("__HERO__", &bg)
+        .replace("__BASECOLOR__", &st.base_color)
+        .replace("__POS__", &pos)
+        .replace("__FIT__", &fit)
+        .replace("__INK2__", &st.ink2)
+        .replace("__INK3__", &st.ink3)
+        .replace("__INK4__", &st.ink4)
+        .replace("__INK__", &st.ink)
+        .replace("__SURFACE__", &st.surface)
+        .replace("__GLASS_STRONG__", &st.glass_strong)
+        .replace("__GLASS_SOFT__", &st.glass_soft)
+        .replace("__GLASS__", &st.glass)
+        .replace("__BORDER_STRONG__", &st.border_strong)
+        .replace("__BORDER_SOFT__", &st.border_soft)
+        .replace("__BORDER__", &st.border)
+        .replace("__BLUR__", &st.blur)
+        .replace("__HOVER__", &st.hover)
+        .replace("__SELECTION__", &st.selection)
+        .replace("__SCRIM_TOP__", &st.scrim_top)
+        .replace("__SCRIM_MID__", &st.scrim_mid)
+        .replace("__SCRIM_BOT__", &st.scrim_bot)
+        .replace("__ACCENT_BLOCK__", &accent_block);
+
+    Ok(wrap_injection_css(&css, "Linear"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -871,9 +1110,16 @@ mod tests {
     #[test]
     fn every_bundled_theme_parses_and_generates() {
         // all themes/<id>/theme.json must deserialize into Theme and produce a
-        // non-empty Codex injection script (catches agent-written JSON typos /
-        // field-type mismatches that get_themes() would otherwise silently skip).
+        // non-empty injection script for EVERY agent (catches agent-written JSON typos
+        // / field-type mismatches that get_themes() would otherwise silently skip, and
+        // guards that no theme breaks one agent's template). One stable per-agent marker
+        // confirms the right template ran.
         let themes_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../themes");
+        let agents = [
+            (AgentKind::Codex, ".app-shell-left-panel"),
+            (AgentKind::Antigravity, ".bg-card"),
+            (AgentKind::Linear, "#mainLayoutContainer"),
+        ];
         let mut count = 0;
         for entry in std::fs::read_dir(&themes_dir)
             .expect("read themes dir")
@@ -888,13 +1134,15 @@ mod tests {
             let mut t: Theme = serde_json::from_str(&raw)
                 .unwrap_or_else(|e| panic!("theme.json failed to parse at {:?}: {}", json, e));
             t.dir = dir.clone();
-            let script = generate_injection_script(&t, &AgentKind::Codex)
-                .unwrap_or_else(|e| panic!("inject script failed for {:?}: {}", dir, e));
-            assert!(
-                script.contains("data:image/") && script.contains(".app-shell-left-panel"),
-                "theme {:?} produced an incomplete script",
-                t.id
-            );
+            for (kind, marker) in &agents {
+                let script = generate_injection_script(&t, kind)
+                    .unwrap_or_else(|e| panic!("inject script failed for {:?} {kind}: {}", dir, e));
+                assert!(
+                    script.contains("data:image/") && script.contains(marker),
+                    "theme {:?} produced an incomplete {kind} script",
+                    t.id
+                );
+            }
             count += 1;
         }
         assert!(count >= 5, "expected several bundled themes, found {count}");
@@ -986,6 +1234,55 @@ mod tests {
         assert!(script.contains("--cl-ink:#f1ece4"));
         // no accent declared -> accent block omitted (brand --primary remap absent)
         assert!(!script.contains("--primary:var(--cl-accent)"));
+        // default background position
+        assert!(script.contains("center top"));
+    }
+
+    #[test]
+    fn linear_script_applies_modular_style() {
+        let theme = load_changli();
+        let script = generate_injection_script(&theme, &AgentKind::Linear).unwrap();
+        // background image inlined as a data URI
+        assert!(script.contains("data:image/jpeg;base64,"));
+        // the same --cl-* knobs as Codex/Antigravity feed the dark-mode overlay
+        assert!(script.contains("--cl-ink:#f4ebdf"));
+        // dark-mode overlay: force dark scheme + transparentise opaque content surfaces
+        assert!(script.contains("color-scheme:dark"));
+        assert!(script.contains("--color-bg-primary:transparent"));
+        // stable surface hooks (IDs / semantic class / data-attr) + a build-specific sc- id
+        assert!(script.contains("#mainLayoutContainer"));
+        assert!(script.contains(".section-to-print"));
+        assert!(script.contains(r#"[data-list-row="true"]"#));
+        // wallpaper layer + content-region readability veil
+        assert!(script.contains("html::before"));
+        assert!(script.contains("html::after"));
+        // elevated chrome (modals / menus) re-skinned to frosted glass
+        assert!(script.contains(r#"[role="dialog"]"#));
+        // warm accent from style.accent threads through focus ring + links
+        assert!(script.contains("#e08a55"));
+        assert!(script.contains("--focus-ring-color:var(--cl-focus)"));
+        assert!(script.contains(r#"a,a:visited,[class*="link" i]{color:var(--cl-accent)"#));
+        // background position from theme.json
+        assert!(script.contains("50% 4%"));
+        // ISOLATION: must NOT carry Codex-only or Antigravity-only selectors/tokens
+        assert!(!script.contains(".app-shell-left-panel"));
+        assert!(!script.contains("--color-token-main-surface-primary"));
+        assert!(!script.contains(".bg-card"));
+        if let Ok(path) = std::env::var("DUMP_LINEAR_SCRIPT") {
+            std::fs::write(path, &script).unwrap();
+        }
+    }
+
+    #[test]
+    fn linear_script_falls_back_to_neutral_defaults_without_style() {
+        let mut theme = load_changli();
+        theme.style = None;
+        theme.background_position = None;
+        let script = generate_injection_script(&theme, &AgentKind::Linear).unwrap();
+        // neutral default ink colour is used
+        assert!(script.contains("--cl-ink:#f1ece4"));
+        // no accent declared -> accent block omitted (focus-ring remap absent)
+        assert!(!script.contains("--focus-ring-color:var(--cl-focus)"));
         // default background position
         assert!(script.contains("center top"));
     }
