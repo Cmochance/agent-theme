@@ -37,12 +37,15 @@ export interface Theme {
   dir: string;
 }
 
+/** Supported agents (matches src-tauri AgentKind, serialized lowercase). */
+export type AgentKind = 'codex' | 'antigravity' | 'linear';
+
 export interface AppConfig {
   enabled: boolean;
   selectedThemeId: string;
   autoLaunchAgent: boolean;
   activeIdentifier: string | null;
-  selectedAgent: 'codex' | 'antigravity';
+  selectedAgent: AgentKind;
 }
 
 export interface AgentStatus {

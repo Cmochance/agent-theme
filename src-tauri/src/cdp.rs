@@ -66,6 +66,20 @@ pub fn find_main_target<'a>(targets: &'a [Target], kind: &AgentKind) -> Option<&
                 .iter()
                 .find(|t| t.target_type == "page" && t.title.contains("Antigravity"))
         }
+        AgentKind::Linear => {
+            // Thin Electron shell that loads the remote web app directly
+            // (renderer/index.html is empty; main process loads
+            // https://linear.app/auth/desktop → https://linear.app).
+            if let Some(main) = targets
+                .iter()
+                .find(|t| t.url.starts_with("https://linear.app") && t.target_type == "page")
+            {
+                return Some(main);
+            }
+            targets
+                .iter()
+                .find(|t| t.target_type == "page" && t.title.contains("Linear"))
+        }
     }
 }
 
@@ -200,6 +214,27 @@ pub async fn clear_theme(
     Ok(())
 }
 
+pub async fn reload_page(port: u16, kind: &AgentKind) -> Result<(), String> {
+    let targets = list_targets(port).await?;
+    let target =
+        find_main_target(&targets, kind).ok_or("Could not find Agent main window target")?;
+
+    let ws_url = target
+        .web_socket_debugger_url
+        .as_ref()
+        .ok_or("Target has no WebSocket URL")?;
+    let (mut ws_stream, _): (WebSocketStream<MaybeTlsStream<TcpStream>>, _) =
+        connect_async(ws_url.as_str())
+            .await
+            .map_err(|e| format!("WebSocket connect failed: {}", e))?;
+
+    make_cdp_request(&mut ws_stream, "Page.enable", serde_json::json!({})).await?;
+    make_cdp_request(&mut ws_stream, "Page.reload", serde_json::json!({})).await?;
+
+    let _ = ws_stream.close(None).await;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{find_main_target, Target};
@@ -235,25 +270,19 @@ mod tests {
 
         assert_eq!(target.map(|t| t.url.as_str()), Some("app://-/index.html"));
     }
-}
 
-pub async fn reload_page(port: u16, kind: &AgentKind) -> Result<(), String> {
-    let targets = list_targets(port).await?;
-    let target =
-        find_main_target(&targets, kind).ok_or("Could not find Agent main window target")?;
+    #[test]
+    fn finds_linear_remote_page() {
+        let targets = vec![page(
+            "MOC-130 issue",
+            "https://linear.app/mochance/issue/MOC-130",
+        )];
 
-    let ws_url = target
-        .web_socket_debugger_url
-        .as_ref()
-        .ok_or("Target has no WebSocket URL")?;
-    let (mut ws_stream, _): (WebSocketStream<MaybeTlsStream<TcpStream>>, _) =
-        connect_async(ws_url.as_str())
-            .await
-            .map_err(|e| format!("WebSocket connect failed: {}", e))?;
+        let target = find_main_target(&targets, &AgentKind::Linear);
 
-    make_cdp_request(&mut ws_stream, "Page.enable", serde_json::json!({})).await?;
-    make_cdp_request(&mut ws_stream, "Page.reload", serde_json::json!({})).await?;
-
-    let _ = ws_stream.close(None).await;
-    Ok(())
+        assert_eq!(
+            target.map(|t| t.url.as_str()),
+            Some("https://linear.app/mochance/issue/MOC-130")
+        );
+    }
 }

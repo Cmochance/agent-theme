@@ -27,8 +27,12 @@ Agent Theme is a standalone desktop app (Tauri v2). The agent (Codex Desktop / A
 |---|---|---|
 | **Codex Desktop** | ✅ Supported | overrides Tailwind v4 `--color-token-*` design tokens + per-module frosted glass |
 | **Antigravity** | ✅ Supported | overrides shadcn / `--vscode-*` semantic tokens + per-panel frosted glass + chat-prose / code-block recolouring |
+| **Linear** | ✅ Supported | rides Linear's **Dark mode**: wallpaper layer + content surfaces made translucent + frosted glass on sidebar / tabs / cards / menus / dialogs |
 
-> Both are injected at the CDP runtime and share `theme.json`'s colour knobs; support for more agents will be added over time.
+> All three are injected at the CDP runtime and share `theme.json`'s colour knobs; support for more agents will be added over time.
+
+> [!IMPORTANT]
+> **Linear must be set to Dark mode first** (Settings → Preferences → Interface theme → **Dark**). Linear's colours are driven by three systems (StyleX atomic vars + legacy `--color-*` + hardcoded literals), so light mode can't be cleanly retheme'd (text stays invisible); in Dark mode Linear natively renders dark surfaces + light text, and the theme only layers a wallpaper + frosted glass on top — crisp and flicker-free.
 
 ## Theme Showcase
 
@@ -37,6 +41,10 @@ Every theme is **colour-matched individually** to its own background — glass t
 | 长离 · Changli | 霜银 · Frost |
 |---|---|
 | ![Changli](docs/antigravity/changli.jpg) | ![Frost](docs/antigravity/frost.jpg) |
+
+And the actual look on Linear (Dark mode + Changli — sidebar / title / content text blurred for privacy):
+
+![Linear · Changli](docs/linear/changli.jpg)
 
 **11** built-in themes (backgrounds are the respective character artworks — see [Disclaimer](#disclaimer)):
 
