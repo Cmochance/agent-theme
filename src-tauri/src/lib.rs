@@ -186,15 +186,59 @@ async fn delete_custom_theme_cmd(_app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Show / focus the main window (used by the tray and single-instance hook).
+fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+/// Menu-bar tray icon: left-click shows the window, right-click opens a menu
+/// (Show Window / Quit). This is the only way to fully quit the app.
+fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem};
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
+    let show_item = MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+    let mut builder = TrayIconBuilder::with_id("main-tray")
+        .tooltip("Agent Theme")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => show_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+
+    if let Some(icon) = app.default_window_icon() {
+        builder = builder.icon(icon.clone());
+    }
+
+    builder.build(app)?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = app
-                .get_webview_window("main")
-                .expect("no main window")
-                .set_focus();
+            show_main_window(app);
         }))
         .manage(AppState {
             cdp_port: Mutex::new(None),
@@ -212,7 +256,21 @@ pub fn run() {
             upload_custom_theme,
             delete_custom_theme_cmd,
         ])
+        .on_window_event(|window, event| {
+            // Closing the window keeps the background monitor alive — hide to the
+            // menu bar instead of quitting. Quit via the tray's Quit item.
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .setup(|app| {
+            // Menu-bar app: hide the Dock icon.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
+            setup_tray(app.handle())?;
+
             // Background monitor: discover existing debug ports and re-inject theme.
             let monitor_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {

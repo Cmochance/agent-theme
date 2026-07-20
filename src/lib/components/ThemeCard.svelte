@@ -1,6 +1,7 @@
 <script lang="ts">
   import { configStore } from '../stores';
   import { applyTheme, deleteTheme } from '../actions';
+  import Icon from './Icon.svelte';
   import type { Theme } from '../types';
 
   export let theme: Theme;
@@ -24,54 +25,43 @@
 </script>
 
 <div
-  class="relative rounded-[16px] overflow-hidden cursor-pointer
-    border transition-all duration-300 h-[250px]
-    {isActive
-      ? 'border-[#3b82f6] shadow-[0_0_16px_rgba(59,130,246,0.25)]'
-      : 'border-[rgba(59,130,246,0.15)] hover:border-[rgba(59,130,246,0.35)]'}"
+  class="group relative h-[120px] cursor-pointer overflow-hidden rounded-[var(--radius-card)]
+    transition duration-200 hover:brightness-[1.03]"
+  style="box-shadow:{isActive ? '0 0 0 2px var(--accent)' : '0 0 0 1px var(--separator)'};"
   on:click={handleApply}
   on:keydown={(e) => e.key === 'Enter' && handleApply()}
   role="button"
   tabindex="0"
 >
-  <!-- Preview Image -->
-  <img
-    src={previewSrc}
-    alt={theme.displayName.en}
-    class="w-full h-full object-cover"
-  />
+  <img src={previewSrc} alt={theme.displayName.en} class="h-full w-full object-cover" />
 
-  <!-- Gradient Overlay -->
-  <div class="absolute inset-0 bg-gradient-to-t from-[rgba(241,245,250,0.92)] via-[rgba(241,245,250,0.4)] to-transparent pointer-events-none"></div>
+  <!-- neutral bottom scrim -->
+  <div
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-[56px]"
+    style="background:linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.30) 45%, transparent);"
+  ></div>
 
-  <!-- Bottom Info -->
-  <div class="absolute bottom-0 left-0 right-0 p-[12px_16px] flex items-end justify-between">
-    <div>
-      <h3 class="text-[0.95rem] font-semibold text-[#1e293b]">{theme.displayName.en}</h3>
-      <p class="text-[0.75rem] text-[#94a3b8]">
-        {theme.isCustom ? 'User uploaded' : 'Built-in'}
-      </p>
-    </div>
-
-    <div class="flex items-center gap-2">
-      {#if theme.isCustom}
-        <button
-          class="w-[24px] h-[24px] rounded-full flex items-center justify-center
-            bg-[rgba(239,68,68,0.2)] border border-[rgba(239,68,68,0.4)]
-            text-white text-[0.7rem] font-bold hover:bg-[rgba(239,68,68,0.4)]
-            transition-colors"
-          title="Delete custom theme"
-          on:click|stopPropagation={handleDelete}
-        >
-          ✕
-        </button>
-      {/if}
-
-      {#if isActive}
-        <span class="text-[0.75rem] font-semibold text-[#10b981]">Applied</span>
-      {:else}
-        <span class="text-[0.75rem] font-semibold text-[#3b82f6]">Use Theme</span>
-      {/if}
+  <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-[6px] p-[8px_10px]">
+    <div class="min-w-0">
+      <h3 class="truncate text-[12px] font-semibold text-white">{theme.displayName.en}</h3>
     </div>
   </div>
+
+  {#if isActive}
+    <div
+      class="absolute right-[8px] top-[8px] flex h-[20px] w-[20px] items-center justify-center rounded-full text-white"
+      style="background:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.3);"
+    >
+      <Icon name="checkmark" size={13} strokeWidth={2.2} />
+    </div>
+  {:else if theme.isCustom}
+    <button
+      class="absolute right-[8px] top-[8px] flex h-[20px] w-[20px] items-center justify-center rounded-full
+        bg-black/45 text-white opacity-0 transition-colors hover:bg-[var(--red)] group-hover:opacity-100"
+      title="Delete custom theme"
+      on:click|stopPropagation={handleDelete}
+    >
+      <Icon name="xmark" size={12} strokeWidth={2} />
+    </button>
+  {/if}
 </div>
