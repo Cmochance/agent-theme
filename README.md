@@ -1,8 +1,8 @@
 # Agent Theme
 
 > [!NOTE]
-> 🎨 **Agent Theme** 是 **Codex Desktop / Antigravity** 的独立换肤伴侣应用。
-> 通过 Chrome DevTools Protocol 向代理的 WebView 运行时注入 CSS，实现「角色壁纸 + 磨砂玻璃面板」的视觉主题，**不修改代理任何源码、安全可逆**。
+> 🎨 **Agent Theme** 是 **Codex Desktop / Antigravity / Linear** 的独立换肤伴侣应用。
+> 通过 Chrome DevTools Protocol 向代理应用的 WebView 运行时注入 CSS，实现「角色壁纸 + 磨砂玻璃面板」的视觉主题，**不修改代理任何源码、安全可逆**。
 > 内置 **11 套**按背景图独立配色的二次元主题，支持自定义上传裁剪，一键换肤。
 
 <p align="center">
@@ -19,7 +19,8 @@
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/macOS-000000?logo=apple"></a>
 </p>
 
-Agent Theme 是一个独立的桌面应用(Tauri v2)。代理(Codex Desktop / Antigravity)启动时附带 `--remote-debugging-port` 暴露 CDP 端口，本应用通过 WebSocket 连上去，用 `Page.addScriptToEvaluateOnNewDocument` 在页面加载前注入一段脚本：插入背景图层 + 覆盖代理 UI 的设计令牌(design tokens)+ 给各面板加 `backdrop-filter` 磨砂玻璃。整套主题只活在运行时，关掉开关或代理重启即自然消失，**不动代理的 binary、不改任何配置文件**。
+Agent Theme 是一个独立的桌面托盘应用（Tauri v2），常驻 macOS 菜单栏（Accessory App，不占 Dock 栏）。目标应用（Codex Desktop / Antigravity / Linear）启动时附带 `--remote-debugging-port` 暴露 CDP 端口，本应用通过 WebSocket 连上去，用 `Page.addScriptToEvaluateOnNewDocument` 在页面加载前注入一段脚本：插入背景图层 + 覆盖 UI 设计令牌 + 给各面板添加 `backdrop-filter` 磨砂玻璃。整套主题只活在运行时，关掉开关或代理重启即自然消失，**不动代理的 binary、不改任何配置文件**。
+
 
 ## 已适配应用
 
@@ -57,17 +58,19 @@ Linear 上的实际效果(暗色模式 + 长离 Changli，侧栏 / 标题 / 内�
 | `nailin` | 奈琳 | Nailin | `carton` | 纸箱 | Carton |
 | `frost` | 霜银 | Frost | | | |
 
-> 同一套主题对 **Codex Desktop** 与 **Antigravity** 均适用——两个代理共享 theme.json 的配色旋钮，各自按平台 UI 结构注入对应的令牌覆盖。
+> 同一套主题对 **Codex Desktop**、**Antigravity** 与 **Linear** 均适用——三款应用共享 theme.json 的配色旋钮，各自按平台 UI 结构注入对应的令牌覆盖。
 
 ## 功能特性
 
 - 🎨 **11 套内置主题** —— 每套按背景图独立调出暗玻璃 + 强调色 + 分级文字色，一键切换
 - 🖼️ **自定义主题** —— 拖拽上传图片 → 1:1 裁剪 → 保存为本地主题
-- 🔄 **双代理支持** —— 同时支持 **Codex Desktop** 和 **Antigravity**，顶部切换栏自由选择
-- 🚀 **受限重启** —— 一键重启当前代理并附加调试端口参数，仅作用于已支持的两个代理，不碰其它进程
+- 🔄 **多代理支持** —— 同时支持 **Codex Desktop**、**Antigravity** 与 **Linear**，顶部切换栏自由选择
+- 🖥️ **原生菜单栏应用** —— 常驻 macOS 状态栏托盘（Accessory 模式，无 Dock 图标），关闭窗口自动隐藏至托盘，后台持续监控
+- ⚡ **离线轻量** —— 内置内联 SVG 图标，不依赖外部 Google Fonts CDN，紧凑磨砂玻璃窗口与系统原生设计深度融合
+- 🚀 **受限重启** —— 一键重启当前目标应用并附加调试端口参数，仅作用于受支持的应用，不碰其它进程
 - 🔌 **CDP 运行时注入** —— 通过 Chrome DevTools Protocol 注入，不改代理源码，清除即恢复原样
-- 📊 **实时状态** —— 界面实时显示代理运行状态与 CDP 端口绑定情况
-- 💾 **配置持久化** —— 设置保存到 `~/.codex/agent-theme/config.json`，重启不丢失
+- 📊 **实时状态** —— 界面实时显示应用运行状态与 CDP 端口绑定情况
+- 💾 **配置持久化** —— 设置保存到 `~/.agent-theme/config.json`，自定义主题保存在 `~/.agent-theme/themes/`，重启不丢失
 - 🔒 **单实例保护** —— 防止多个伴侣窗口同时运行导致冲突
 
 ## 下载与安装
@@ -89,21 +92,21 @@ Linear 上的实际效果(暗色模式 + 长离 Changli，侧栏 / 标题 / 内�
 
 ## 快速开始
 
-1. **选择代理** —— 顶部切换栏选 Codex 或 Antigravity
-2. **准备调试端口** —— 若界面显示 `No debug port`，点 `Restart App`，伴侣会结束当前代理并以 `--remote-debugging-port=0` 重新拉起
-3. **选择主题** —— 在主题网格点任意卡片即时预览并应用
-4. **开关主题** —— 「主题开关」控制是否注入；关闭后恢复代理原始界面
+1. **选择代理应用** —— 顶部切换栏选择 Codex、Antigravity 或 Linear
+2. **准备调试端口** —— 若界面显示 `No debug port`，点右上角刷新/重启按钮，伴侣会结束当前目标应用并以 `--remote-debugging-port=0` 重新拉起
+3. **选择主题** —— 在主题网格点击任意卡片即时应用（支持分页切换查看全部 11 套主题）
+4. **开关主题** —— 顶部「主题开关」控制是否注入；关闭后恢复代理原始界面
 
-> 主题通过 `Page.addScriptToEvaluateOnNewDocument` 注入，**仅在页面导航 / 刷新时生效**。代理重启后注入会丢失，本应用检测到可用端口会自动重新注入,保持开关开启即可。
+> 主题通过 `Page.addScriptToEvaluateOnNewDocument` 注入，**仅在页面导航 / 刷新时生效**。代理重启后注入会丢失，本应用在后台检测到可用端口会自动重新注入,保持开关开启即可。
 
 ## 主题管理
 
 ### 创建自定义主题
 
-1. 点主题网格里的「+」卡片
-2. 拖图片到上传区(JPG/PNG，≤ 20MB)
+1. 点击顶部栏右侧的「Custom」按钮打开上传弹窗
+2. 拖拽图片到上传区（JPG/PNG，≤ 20MB）
 3. 用裁剪工具调整背景区域
-4. 「保存并应用」—— 主题写入 `~/.codex/agent-theme/themes/`
+4. 点击「保存并应用」—— 主题将保存到 `~/.agent-theme/themes/custom/`
 
 ### theme.json 结构
 
@@ -207,7 +210,11 @@ CDP 注入的主题在代理重启后会丢失。本应用检测到可用调试�
 
 ### 会修改代理的源码或配置吗?
 
-不会。注入完全通过 CDP 运行时完成,不写代理的任何文件;清除注入后代理恢复原始外观。本应用的进程管理范围仅限已支持的两个代理,不清理其锁文件、不改其包内容。
+不会。注入完全通过 CDP 运行时完成,不写代理的任何文件;清除注入后代理恢复原始外观。本应用的进程管理范围仅限受支持的应用,不清理其锁文件、不改其包内容。
+
+### 如何彻底退出伴侣应用?
+
+点击窗口左上角的关闭按钮只会将窗口隐藏到菜单栏（以便保持后台 CDP 监听并在代理重启时自动重注入）。如需彻底退出，请在 macOS 顶部菜单栏右键点击托盘图标，并选择「Quit」。
 
 ### Antigravity 的代码语法高亮还是浅色?
 
@@ -215,7 +222,7 @@ CDP 注入的主题在代理重启后会丢失。本应用检测到可用调试�
 
 ## 免责声明
 
-- 本项目是独立的第三方换肤工具,**不是** OpenAI / Google 的官方项目,不复用其商标 / Logo / 发布身份;Codex / Antigravity 为各自所有者的产品。
+- 本项目是独立的第三方换肤工具,**不是** OpenAI / Google / Linear 的官方项目,不复用其商标 / Logo / 发布身份;Codex / Antigravity / Linear 为各自所有者的产品。
 - 主题注入完全通过 CDP 运行时完成,只连本机 `127.0.0.1` 的调试端口,不接管系统代理、不联网上传、不修改代理文件。
 - 内置主题的背景图为相应作品 / 角色的美术作品(如《鸣潮》《碧蓝航线》等),版权归原作者 / 厂商所有,**仅供个人学习与本地外观自定义使用**,请勿用于商业用途或二次分发。如有侵权请开 issue,将及时移除。
 
