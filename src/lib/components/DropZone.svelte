@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
+
   export let onFileSelected: (file: File) => void;
 
   let isDragOver = false;
@@ -28,11 +30,11 @@
 </script>
 
 <div
-  class="border-2 border-dashed rounded-[12px] p-[40px_20px] text-center cursor-pointer
-    flex flex-col items-center gap-[12px] transition-all duration-200
+  class="flex cursor-pointer flex-col items-center gap-[10px] rounded-[10px] border border-dashed
+    p-[36px_20px] text-center transition-colors
     {isDragOver
-      ? 'border-[#3b82f6] bg-[rgba(59,130,246,0.05)]'
-      : 'border-[rgba(59,130,246,0.15)]'}"
+      ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
+      : 'border-[var(--separator)] hover:border-[var(--ink-3)]'}"
   on:drop={handleDrop}
   on:dragover={handleDragOver}
   on:dragleave={handleDragLeave}
@@ -41,9 +43,11 @@
   role="button"
   tabindex="0"
 >
-  <span class="text-[3rem]">📤</span>
-  <p class="text-[#475569]">Drag image here, or <span class="text-[#3b82f6] font-semibold">Browse Files</span></p>
-  <span class="text-[0.75rem] text-[#94a3b8]">JPG, PNG supported, max 20MB</span>
+  <span class="text-[var(--ink-3)]"><Icon name="upload" size={28} strokeWidth={1.4} /></span>
+  <p class="text-[13px] text-[var(--ink-2)]">
+    Drag image here, or <span class="font-medium text-[var(--accent)]">browse files</span>
+  </p>
+  <span class="text-[11px] text-[var(--ink-3)]">JPG, PNG · up to 20MB</span>
   <input
     bind:this={fileInput}
     type="file"

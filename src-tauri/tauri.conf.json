@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "agent_theme_companion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.agenttheme.companion",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -10,13 +10,25 @@
   },
   "app": {
     "withGlobalTauri": false,
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "",
-        "width": 800,
-        "height": 600,
+        "width": 560,
+        "height": 640,
+        "minWidth": 480,
+        "minHeight": 520,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": true,
+        "titleBarStyle": "Transparent",
+        "hiddenTitle": true,
+        "windowEffects": {
+          "effects": ["sidebar"],
+          "state": "active",
+          "radius": 18
+        }
       }
     ],
     "security": {

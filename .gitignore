@@ -21,3 +21,7 @@ src-tauri/gen/
 
 # Theme source images (large originals; generated bg.jpg ships instead)
 theme-sources/
+
+# Local agent instructions
+AGENTS.md
+

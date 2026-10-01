@@ -104,12 +104,12 @@
   }
 </script>
 
-<div class="flex flex-col gap-[20px] items-center">
+<div class="flex flex-col items-center gap-[16px]">
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={cropContainer}
-    class="w-full h-[350px] bg-[#e2e8f0] rounded-[12px] overflow-hidden relative
-      border border-[rgba(59,130,246,0.15)] flex items-center justify-center select-none"
+    class="relative flex h-[320px] w-full select-none items-center justify-center overflow-hidden rounded-[10px] border border-[var(--separator)]"
+    style="background:var(--fill);"
     on:mousedown={handleMouseDown}
     on:mousemove={handleMouseMove}
     on:mouseup={handleMouseUp}
@@ -119,51 +119,51 @@
     <img
       bind:this={cropImage}
       src={imageSrc}
-      alt="To Crop"
-      class="max-w-full max-h-full absolute cursor-move select-none"
+      alt="To crop"
+      class="absolute max-h-full max-w-full cursor-move select-none"
       style="transform: translate({imageX}px, {imageY}px) scale({imageScale}); transform-origin: 0 0;"
       on:load={onImageLoad}
       draggable="false"
     />
     <div
-      class="absolute w-[300px] h-[300px] border-2 border-[#3b82f6]
-        shadow-[0_0_0_9999px_rgba(30,41,59,0.2)] pointer-events-none rounded-[4px]"
+      class="pointer-events-none absolute h-[300px] w-[300px] rounded-[4px]"
+      style="border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(0,0,0,0.35);"
     ></div>
   </div>
 
   <div class="w-full">
-    <div class="flex items-center gap-[16px]">
-      <label for="zoom-slider" class="font-medium text-[#475569]">Zoom:</label>
+    <div class="flex items-center gap-[12px]">
+      <label for="zoom-slider" class="text-[12px] font-medium text-[var(--ink-2)]">Zoom</label>
       <input
-        type="range" id="zoom-slider"
+        type="range"
+        id="zoom-slider"
         min="10"
         max="200"
         value="100"
-        class="flex-grow accent-[#3b82f6]"
+        class="flex-grow"
+        style="accent-color:var(--accent)"
         on:input={handleZoom}
       />
     </div>
-    <p class="text-[0.8rem] text-[#94a3b8] mt-[8px] text-center">
-      💡 Tip: Drag on the image to adjust crop position.
+    <p class="mt-[8px] text-center text-[11px] text-[var(--ink-3)]">
+      Drag the image to reposition the crop.
     </p>
   </div>
 
-  <div class="flex gap-[12px] justify-end w-full">
+  <div class="flex w-full justify-end gap-[10px]">
     <button
-      class="px-[20px] py-[10px] rounded-[10px] text-[0.9rem] font-medium cursor-pointer
-        bg-[rgba(59,130,246,0.07)] text-[#1e293b] border border-[rgba(59,130,246,0.1)]
-        hover:bg-[rgba(59,130,246,0.12)] transition-colors"
+      class="rounded-[var(--radius-control)] bg-[var(--fill)] px-[16px] py-[8px] text-[13px]
+        font-medium text-[var(--ink)] transition-colors hover:bg-[var(--fill-hover)]"
       on:click={onCancel}
     >
       Re-select
     </button>
     <button
-      class="px-[20px] py-[10px] rounded-[10px] text-[0.9rem] font-medium cursor-pointer
-        bg-[#3b82f6] text-white shadow-[0_4px_14px_rgba(59,130,246,0.35)]
-        hover:bg-[#60a5fa] transition-colors"
+      class="rounded-[var(--radius-control)] bg-[var(--accent)] px-[16px] py-[8px] text-[13px]
+        font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
       on:click={performCrop}
     >
-      Save & Apply
+      Save &amp; Apply
     </button>
   </div>
 </div>

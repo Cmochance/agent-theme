@@ -4,27 +4,23 @@
   export let onChange: (value: boolean) => void = () => {};
 </script>
 
-<label class="relative inline-block w-[48px] h-[24px]">
+<label
+  class="relative inline-block h-[22px] w-[38px] shrink-0"
+  class:opacity-50={disabled}
+>
   <input
     type="checkbox"
     bind:checked
     {disabled}
     on:change={() => onChange(checked)}
-    class="opacity-0 w-0 h-0"
+    class="sr-only"
   />
   <span
-    class="slider absolute cursor-pointer inset-0 rounded-[24px] transition-all duration-300
-      shadow-[inset_0_2px_4px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.5)]
-      {checked
-        ? 'bg-[linear-gradient(180deg,#6ee7b7_0%,#22c55e_100%)] border-[rgba(34,197,94,0.4)]'
-        : 'bg-[linear-gradient(180deg,#d1d5db_0%,#9ca3af_100%)] border-[rgba(100,110,130,0.3)]'}"
-  >
-    <span
-      class="absolute content-[''] h-[16px] w-[16px] left-[3px] bottom-[3px]
-        bg-[radial-gradient(circle_at_40%_35%,#ffffff,#e5e7eb)]
-        shadow-[0_1px_3px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.8)]
-        rounded-full transition-all duration-300"
-      style={checked ? 'transform: translateX(24px);' : ''}
-    ></span>
-  </span>
+    class="absolute inset-0 rounded-full transition-colors duration-200"
+    style="background:{checked ? 'var(--green)' : 'var(--fill-active)'};"
+  ></span>
+  <span
+    class="absolute left-[2px] top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-transform duration-200"
+    style="box-shadow:0 1px 2px rgba(0,0,0,0.25);{checked ? ' transform:translateX(16px);' : ''}"
+  ></span>
 </label>

@@ -3,6 +3,7 @@
   import { uploadTheme } from '../actions';
   import DropZone from './DropZone.svelte';
   import ImageCropper from './ImageCropper.svelte';
+  import Icon from './Icon.svelte';
 
   let imageSrc: string | null = null;
   let mode: 'select' | 'crop' = 'select';
@@ -14,11 +15,6 @@
       mode = 'crop';
     };
     reader.readAsDataURL(file);
-  }
-
-  function handleCancel() {
-    mode = 'select';
-    imageSrc = null;
   }
 
   function handleReSelect() {
@@ -41,42 +37,34 @@
 {#if $showUploadModal}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="fixed inset-0 z-[1000] flex items-center justify-center p-[20px]
-      bg-[rgba(15,23,42,0.4)] backdrop-blur-[10px]"
+    class="fixed inset-0 z-[1000] flex items-center justify-center p-[20px]"
+    style="background:rgba(0,0,0,0.32); backdrop-filter:blur(8px);"
     on:click={closeModal}
     on:keydown={(e) => e.key === 'Escape' && closeModal()}
   >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-      class="w-full max-w-[680px] flex flex-col bg-white/75 rounded-[16px]
-        border border-[rgba(59,130,246,0.15)] backdrop-blur-[20px]
-        shadow-[0_8px_32px_rgba(30,41,59,0.08)]"
+      class="flex w-full max-w-[520px] flex-col overflow-hidden rounded-[14px]"
+      style="background:var(--panel-elevated); border:1px solid var(--separator); box-shadow:var(--shadow-panel); backdrop-filter:blur(30px) saturate(180%);"
       on:click|stopPropagation
       on:keydown|stopPropagation
     >
-      <!-- Header -->
-      <div class="flex justify-between items-center p-[20px_24px]
-        border-b border-[rgba(59,130,246,0.15)]">
-        <h3 class="text-[1.3rem] font-semibold text-[#1e293b]">Upload Custom Background</h3>
+      <div class="flex items-center justify-between border-b border-[var(--separator)] px-[18px] py-[14px]">
+        <h3 class="text-[14px] font-semibold text-[var(--ink)]">Upload Custom Background</h3>
         <button
-          class="bg-none border-none text-[#475569] text-[1.8rem] cursor-pointer
-            leading-none hover:text-[#3b82f6]"
+          class="flex h-[24px] w-[24px] items-center justify-center rounded-[6px] text-[var(--ink-3)]
+            transition-colors hover:bg-[var(--fill-hover)] hover:text-[var(--ink)]"
           on:click={closeModal}
         >
-          &times;
+          <Icon name="xmark" size={14} />
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="p-[24px] flex flex-col gap-[20px]">
+      <div class="flex flex-col gap-[16px] p-[18px]">
         {#if mode === 'select'}
           <DropZone onFileSelected={handleFileSelected} />
         {:else if imageSrc}
-          <ImageCropper
-            {imageSrc}
-            onSave={handleSave}
-            onCancel={handleReSelect}
-          />
+          <ImageCropper {imageSrc} onSave={handleSave} onCancel={handleReSelect} />
         {/if}
       </div>
     </div>

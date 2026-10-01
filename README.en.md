@@ -1,7 +1,7 @@
 # Agent Theme
 
 > [!NOTE]
-> 🎨 **Agent Theme** is a standalone theming companion for **Codex Desktop / Antigravity**.
+> 🎨 **Agent Theme** is a standalone theming companion for **Codex Desktop / Antigravity / Linear**.
 > It injects CSS into the agent's WebView at runtime via the Chrome DevTools Protocol to render a "character wallpaper + frosted-glass panels" look — **without touching the agent's source, fully reversible**.
 > Ships **11** built-in anime themes, each colour-matched to its own background image, plus custom upload & crop. One click to reskin.
 
@@ -19,7 +19,8 @@
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/macOS-000000?logo=apple"></a>
 </p>
 
-Agent Theme is a standalone desktop app (Tauri v2). The agent (Codex Desktop / Antigravity) is launched with `--remote-debugging-port` to expose a CDP port; this app connects over WebSocket and uses `Page.addScriptToEvaluateOnNewDocument` to inject a script before the page loads — adding a background layer, overriding the agent UI's design tokens, and applying `backdrop-filter` frosted glass to each panel. The whole theme lives only at runtime: turn off the toggle or restart the agent and it disappears, **without modifying the agent's binary or any config file**.
+Agent Theme is a standalone desktop tray app (Tauri v2) residing in the macOS menu bar (Accessory App without a Dock icon). The target agent (Codex Desktop / Antigravity / Linear) is launched with `--remote-debugging-port` to expose a CDP port; this app connects over WebSocket and uses `Page.addScriptToEvaluateOnNewDocument` to inject a script before page load — adding a background layer, overriding UI design tokens, and applying `backdrop-filter` frosted glass to each panel. The whole theme lives only at runtime: turn off the toggle or restart the agent and it disappears, **without modifying the agent's binary or any config file**.
+
 
 ## Supported Apps
 
@@ -57,17 +58,19 @@ And the actual look on Linear (Dark mode + Changli — sidebar / title / content
 | `nailin` | Nailin | `carton` | Carton |
 | `frost` | Frost | | |
 
-> The same theme applies to both **Codex Desktop** and **Antigravity** — the two agents share theme.json's colour knobs, each injecting platform-appropriate token overrides.
+> The same theme applies to **Codex Desktop**, **Antigravity**, and **Linear** — all three agents share theme.json's colour knobs, each injecting platform-appropriate token overrides.
 
 ## Features
 
 - 🎨 **11 built-in themes** — each derives dark glass + accent + tiered text colours from its own background; one-click switch
 - 🖼️ **Custom themes** — drag-drop an image → 1:1 crop → save as a local theme
-- 🔄 **Dual-agent support** — works with both **Codex Desktop** and **Antigravity**, switchable from the top bar
-- 🚀 **Scoped restart** — restart the current agent with the debug-port flag attached; only the two supported agents are touched, nothing else
+- 🔄 **Multi-agent support** — works with **Codex Desktop**, **Antigravity**, and **Linear**, switchable from the top bar
+- 🖥️ **Native menu-bar app** — resides in the macOS menu bar (Accessory mode, no Dock icon); closing hides to tray while keeping background monitoring active
+- ⚡ **Offline & lightweight** — built-in inline SVGs (no external Google Fonts CDN), compact frosted-glass window matching macOS native materials
+- 🚀 **Scoped restart** — restart the target agent with the debug-port flag attached; only supported agents are touched, nothing else
 - 🔌 **CDP runtime injection** — injected via Chrome DevTools Protocol, no source changes, clears back to the original look
 - 📊 **Live status** — shows agent run state and CDP port binding in real time
-- 💾 **Persistent config** — settings saved to `~/.codex/agent-theme/config.json`
+- 💾 **Persistent config** — settings saved to `~/.agent-theme/config.json`, custom themes to `~/.agent-theme/themes/`
 - 🔒 **Single-instance guard** — prevents conflicting companion windows
 
 ## Download & Install
@@ -89,21 +92,21 @@ Not Apple-notarized yet, so the app uses **ad-hoc signing** (which avoids the "i
 
 ## Quick Start
 
-1. **Pick an agent** — Codex or Antigravity from the top switcher
-2. **Get a debug port** — if the UI shows `No debug port`, click `Restart App`; the companion stops the current agent and relaunches it with `--remote-debugging-port=0`
-3. **Pick a theme** — click any card in the theme grid to preview & apply instantly
-4. **Toggle** — the "Theme" switch controls injection; turning it off restores the agent's original look
+1. **Pick an agent** — select Codex, Antigravity, or Linear from the top switcher
+2. **Get a debug port** — if the UI shows `No debug port`, click the restart/refresh button in the top bar; the companion stops the current agent and relaunches it with `--remote-debugging-port=0`
+3. **Pick a theme** — click any card in the theme grid to apply immediately (paginated view for all 11 themes)
+4. **Toggle** — the top "Theme" toggle controls injection; turning it off restores the agent's original look
 
-> Themes are injected via `Page.addScriptToEvaluateOnNewDocument` and take effect **only on page navigation / refresh**. They are lost when the agent restarts; the app re-injects automatically once a port is available — just keep the toggle on.
+> Themes are injected via `Page.addScriptToEvaluateOnNewDocument` and take effect **only on page navigation / refresh**. They are lost when the agent restarts; the app re-injects automatically once a port is available in the background — just keep the toggle on.
 
 ## Theme Management
 
 ### Create a custom theme
 
-1. Click the "+" card in the theme grid
+1. Click the "Custom" button on the right side of the top bar
 2. Drop an image (JPG/PNG, ≤ 20MB)
 3. Adjust the background region with the crop tool
-4. "Save & Apply" — the theme is written to `~/.codex/agent-theme/themes/`
+4. Click "Save & Apply" — the theme is written to `~/.agent-theme/themes/custom/`
 
 ### theme.json structure
 
@@ -207,7 +210,11 @@ CDP-injected themes are lost when the agent restarts. The app re-injects automat
 
 ### Does it modify the agent's source or config?
 
-No. Injection is purely at the CDP runtime; no agent files are written. Clearing the injection restores the original look. Process management is scoped to the two supported agents only — it never touches their lock files or package contents.
+No. Injection is purely at the CDP runtime; no agent files are written. Clearing the injection restores the original look. Process management is scoped to supported agents only — it never touches their lock files or package contents.
+
+### How do I fully quit the companion app?
+
+Clicking the red close button on the window only hides it to the menu bar (so background CDP monitoring stays active and can automatically re-inject when the agent restarts). To completely quit, right-click the tray icon in the macOS menu bar and select "Quit".
 
 ### Antigravity's code syntax highlighting is still light?
 
@@ -215,7 +222,7 @@ The **rendered markdown code blocks** in chat are remapped to a dark syntax pale
 
 ## Disclaimer
 
-- This is an independent third-party theming tool, **not** an official OpenAI / Google project; it does not reuse their trademarks / logos / release identity. Codex / Antigravity are products of their respective owners.
+- This is an independent third-party theming tool, **not** an official OpenAI / Google / Linear project; it does not reuse their trademarks / logos / release identity. Codex / Antigravity / Linear are products of their respective owners.
 - Injection happens entirely at the CDP runtime, connecting only to the local `127.0.0.1` debug port — it does not take over the system proxy, upload anything, or modify agent files.
 - Built-in background images are artwork of the respective works / characters (e.g. *Wuthering Waves*, *Azur Lane*, etc.); copyright belongs to the original authors / publishers, and they are provided **for personal study and local appearance customisation only** — not for commercial use or redistribution. Open an issue if anything infringes and it will be removed promptly.
 
